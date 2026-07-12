@@ -3007,90 +3007,92 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                 
                                             final targetPath = hasLibTarget ? libRs.path : mainRs.path;
                                 
-                                            command = '''
-                          set -e
-                          cargo_bak="\$(mktemp)"
-                          target_bak="\$(mktemp)"
-                          cargo_cfg_bak="\$(mktemp)"
-                          generated_lib=""
-                          cp "${cargoFile.path}" "\$cargo_bak"
-                          cp "$targetPath" "\$target_bak"
-                          if [ -f .cargo/config.toml ]; then cp .cargo/config.toml "\$cargo_cfg_bak"; else : > "\$cargo_cfg_bak"; fi
-                          cleanup(){
-                          cp "\$target_bak" "$targetPath";
-                          cp "\$cargo_bak" "${cargoFile.path}";
-                          if [ -s "\$cargo_cfg_bak" ]; then
-                            mkdir -p .cargo;
-                            cp "\$cargo_cfg_bak" .cargo/config.toml;
-                          else
-                            rm -f .cargo/config.toml;
-                            rmdir .cargo 2>/dev/null || true;
-                          fi;
-                          if [ -n "\$generated_lib" ]; then
-                            rm -f "\$generated_lib";
-                          fi;
-                          rm -f "\$target_bak" "\$cargo_bak" "\$cargo_cfg_bak";
-                          };
-                          trap cleanup EXIT
-                          mkdir -p .cargo
-                          printf '[target.aarch64-linux-android]\nlinker = "clang"\n' > .cargo/config.toml
-                          if [ ${hasLibTarget ? 1 : 0} -eq 1 ]; then
-                          if ! grep -q "fn __entry" "$targetPath"; then
-                            if grep -Eq 'fn[[:space:]]+main' "$targetPath"; then
-                              printf '\n#[unsafe(no_mangle)]\npub extern "C" fn __entry() {\n    let _ = std::panic::catch_unwind(|| {\n        let _ = main();\n    });\n}\n' >> "$targetPath";
-                            else
-                              echo "Error: src/lib.rs needs either __entry() or main() for Roxum run.";
-                              exit 1;
-                            fi
-                          fi
-                          else
-                          if ! grep -Eq 'fn[[:space:]]+main' "$targetPath"; then
-                            echo "Error: main() not found in src/main.rs.";
-                            exit 1;
-                          fi
-                          generated_lib="${widget.rootDir}/src/.roxum_entry_lib.rs"
-                          cat > "\$generated_lib" <<'EOF'
-                          include!("main.rs");
-                          
-                          #[unsafe(no_mangle)]
-                          pub extern "C" fn __entry() {
-                            let _ = std::panic::catch_unwind(|| {
-                                let _ = main();
-                            });
-                          }
-                          EOF
-                          if ! grep -Eq '^[[:space:]]*[lib][[:space:]]*\$' "${cargoFile.path}"; then
-                            printf '\n[lib]\npath = "src/.roxum_entry_lib.rs"\ncrate-type = ["cdylib"]\n' >> "${cargoFile.path}";
-                          fi
-                          fi
-                          cargo rustc --release --lib -- --crate-type=cdylib
-                          so_file="\$(find target -type f -name 'lib*.so' | head -n 1)"
-                          [ -n "\$so_file" ]
-                          rustloader "\$so_file"
-                          ''';
+                                            command =
+'''
+set -e
+cargo_bak="\$(mktemp)"
+target_bak="\$(mktemp)"
+cargo_cfg_bak="\$(mktemp)"
+generated_lib=""
+cp "${cargoFile.path}" "\$cargo_bak"
+cp "$targetPath" "\$target_bak"
+if [ -f .cargo/config.toml ]; then cp .cargo/config.toml "\$cargo_cfg_bak"; else : > "\$cargo_cfg_bak"; fi
+cleanup(){
+cp "\$target_bak" "$targetPath";
+cp "\$cargo_bak" "${cargoFile.path}";
+if [ -s "\$cargo_cfg_bak" ]; then
+  mkdir -p .cargo;
+  cp "\$cargo_cfg_bak" .cargo/config.toml;
+else
+  rm -f .cargo/config.toml;
+  rmdir .cargo 2>/dev/null || true;
+fi;
+if [ -n "\$generated_lib" ]; then
+  rm -f "\$generated_lib";
+fi;
+rm -f "\$target_bak" "\$cargo_bak" "\$cargo_cfg_bak";
+};
+trap cleanup EXIT
+mkdir -p .cargo
+printf '[target.aarch64-linux-android]\nlinker = "clang"\n' > .cargo/config.toml
+if [ ${hasLibTarget ? 1 : 0} -eq 1 ]; then
+if ! grep -q "fn __entry" "$targetPath"; then
+  if grep -Eq 'fn[[:space:]]+main' "$targetPath"; then
+    printf '\n#[unsafe(no_mangle)]\npub extern "C" fn __entry() {\n    let _ = std::panic::catch_unwind(|| {\n        let _ = main();\n    });\n}\n' >> "$targetPath";
+  else
+    echo "Error: src/lib.rs needs either __entry() or main() for Roxum run.";
+    exit 1;
+  fi
+fi
+else
+if ! grep -Eq 'fn[[:space:]]+main' "$targetPath"; then
+  echo "Error: main() not found in src/main.rs.";
+  exit 1;
+fi
+generated_lib="${widget.rootDir}/src/.roxum_entry_lib.rs"
+cat > "\$generated_lib" <<'EOF'
+include!("main.rs");
+
+#[unsafe(no_mangle)]
+pub extern "C" fn __entry() {
+  let _ = std::panic::catch_unwind(|| {
+      let _ = main();
+  });
+}
+EOF
+if ! grep -Eq '^[[:space:]]*[lib][[:space:]]*\$' "${cargoFile.path}"; then
+  printf '\n[lib]\npath = "src/.roxum_entry_lib.rs"\ncrate-type = ["cdylib"]\n' >> "${cargoFile.path}";
+fi
+fi
+cargo rustc --release --lib -- --crate-type=cdylib
+so_file="\$(find target -type f -name 'lib*.so' | head -n 1)"
+[ -n "\$so_file" ]
+rustloader "\$so_file"
+''';
                                 
                                           } else {
-                                            final soPath = path.join(widget.rootDir, '.roxum-rust-run.so');
+                                            final soPath = path.join(tempDir, '.roxum-rust-run.so');
                                 
-                                            command = '''
-                          set -e
-                          rust_bak="\$(mktemp)"
-                          cp "${filePath.path}" "\$rust_bak"
-                          cleanup(){
-                          cp "\$rust_bak" "${filePath.path}";
-                          rm -f "\$rust_bak" "$soPath";
-                          };
-                          trap cleanup EXIT
-                          if ! grep -Eq 'fn[[:space:]]+main' "${filePath.path}"; then
-                          echo "Error: main() not found. This runner requires a main function.";
-                          exit 1;
-                          fi
-                          if ! grep -q "fn __entry" "${filePath.path}"; then
-                          printf '\n#[unsafe(no_mangle)]\npub extern "C" fn __entry() {\n    let _ = std::panic::catch_unwind(|| {\n        let _ = main();\n    });\n}\n' >> "${filePath.path}";
-                          fi
-                          rustc --crate-type=cdylib "${filePath.path}" -o "$soPath" -C linker=clang --sysroot "$runtimesDir/rust"
-                          rustloader "$soPath"
-                          ''';
+                                            command =
+'''
+set -e
+rust_bak="\$(mktemp)"
+cp "${filePath.path}" "\$rust_bak"
+cleanup(){
+cp "\$rust_bak" "${filePath.path}";
+rm -f "\$rust_bak" "$soPath";
+};
+trap cleanup EXIT
+if ! grep -Eq 'fn[[:space:]]+main' "${filePath.path}"; then
+echo "Error: main() not found. This runner requires a main function.";
+exit 1;
+fi
+if ! grep -q "fn __entry" "${filePath.path}"; then
+printf '\n#[unsafe(no_mangle)]\npub extern "C" fn __entry() {\n    let _ = std::panic::catch_unwind(|| {\n        let _ = main();\n    });\n}\n' >> "${filePath.path}";
+fi
+rustc --crate-type=cdylib "${filePath.path}" -o "$soPath" -C linker=clang --sysroot "$runtimesDir/rust"
+rustloader "$soPath"
+''';
                                           }
                                 
                                           runCode(context, command, widget.rootDir);

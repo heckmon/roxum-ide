@@ -255,7 +255,7 @@ packages:
     source: hosted
     version: "9.1.1"
   flutter_colorpicker:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: flutter_colorpicker
       sha256: "969de5f6f9e2a570ac660fb7b501551451ea2a1ab9e2097e89475f60e07816ea"

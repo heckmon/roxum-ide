@@ -604,7 +604,7 @@ class _CodeEditorState extends State<CodeEditor> with AutomaticKeepAliveClientMi
                       currentMatchStyle: TextStyle(backgroundColor: Color(0xFFFFA726)),
                       otherMatchStyle: TextStyle(backgroundColor: Color(0x55FFFF00)),
                     ),
-                    editorTheme: highlightThemes[configState.codeForgeConfig['theme']],
+                    editorTheme: getMergedHighlightThemes(configState.codeForgeConfig)[configState.codeForgeConfig['theme']],
                     textStyle: TextStyle(
                       fontFamily: configState.codeForgeConfig['fontFamily'],
                       fontSize: configState.fontSize,
@@ -12173,7 +12173,7 @@ class _AIChatState extends State<AIChat> with SingleTickerProviderStateMixin {
                                           Expanded(
                                             child: BlocBuilder<ConfigBloc, ConfigState>(
                                               builder: (context, configState) {
-                                                final theme = highlightThemes[configState.codeForgeConfig['theme']] ?? atomOneDarkTheme;
+                                                final theme = getMergedHighlightThemes(configState.codeForgeConfig)[configState.codeForgeConfig['theme']] ?? atomOneDarkTheme;
                                                 
                                                 if (!_initialScrollDone && conversations.isNotEmpty) {
                                                   _initialScrollDone = true;

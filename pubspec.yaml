@@ -1,7 +1,7 @@
 name: roxum
 description: "A minimal and powerful IDE for Android."
 publish_to: 'none'
-version: 2.2.0+34
+version: 2.3.0+36
 
 environment:
   sdk: ^3.12.2
@@ -19,6 +19,7 @@ dependencies:
     sdk: flutter
   flutter_archive: ^6.3.1
   flutter_bloc: ^9.1.1
+  flutter_colorpicker: ^1.1.0
   flutter_file_downloader: ^2.1.1
   flutter_inappwebview: ^6.1.5
   flutter_json: ^0.1.0

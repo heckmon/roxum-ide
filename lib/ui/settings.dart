@@ -6,8 +6,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:re_highlight/styles/vs2015.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:xterm/xterm.dart';
@@ -36,9 +38,10 @@ class _SettingsState extends State<Settings> {
   final sshPasswordController = TextEditingController();
   final themeScroll = ScrollController(), fontScroll = ScrollController();
   final _formKey = GlobalKey<FormState>(), _sshFormKey = GlobalKey<FormState>(), _sshUpdationKey = GlobalKey<FormState>();
-  final _ggufKey = GlobalKey<FormState>();
+  final _ggufKey = GlobalKey<FormState>(), _themeKey = GlobalKey<FormState>();
   bool? _isGeneratedKey;
   int sshStackIndex = 0;
+  static const String _defaultEditorThemeName = 'vs2015';
   final List<Map<String, dynamic>> _ggufModels = [
     {
       'name': 'Qwen2.5-Coder-3B',
@@ -161,13 +164,6 @@ int main() {
     terminal.write('status: \x1b[32mOK\x1b[0m  ');
     terminal.write('warn: \x1b[33m2\x1b[0m  ');
     terminal.write('errors: \x1b[31m0\x1b[0m\r\n');
-  }
-
-  Future<void> _saveCodeForgeConfig(Map<String, dynamic> codeForgeConfig) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('codeForgeConfig', jsonEncode(codeForgeConfig));
-    if (!mounted) return;
-    context.read<ConfigBloc>().add(ChangeConfigEvent(codeForgeConfig));
   }
 
   Future<void> _initializeCopilotForSettingsWhenDisabled() async {
@@ -1016,7 +1012,6 @@ int main() {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Warning icon
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -1031,7 +1026,6 @@ int main() {
                 ),
                 const SizedBox(height: 20),
 
-                // Title
                 Text(
                   'Not Authorized',
                   style: TextStyle(
@@ -1880,6 +1874,397 @@ int main() {
     }
   }
 
+  Future<void> _saveCodeForgeConfig(Map<String, dynamic> currentState) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('codeForgeConfig', jsonEncode(currentState));
+    if (mounted) {
+      context.read<ConfigBloc>().add(ChangeConfigEvent(currentState));
+    }
+  }
+
+  Future<String?> _showCustomEditorThemeDialog(
+    BuildContext context,
+    AppThemeState appThemeState,
+    ConfigState configState, {
+    String? existingThemeName,
+  }) async {
+    final customThemes = getCustomEditorThemes(configState.codeForgeConfig);
+    final initialTheme = existingThemeName != null ? customThemes[existingThemeName] : null;
+    final tokenKeys = vs2015Theme.keys.skip(1).toList();
+    final themeNameController = TextEditingController(text: existingThemeName ?? '');
+    final initialRootStyle = initialTheme?.toMap()['root'] ?? const TextStyle(
+      backgroundColor: Color(0xff000000),
+      color: Color(0xffffffff),
+    );
+    final themeStyles = Map<String, TextStyle>.from(initialTheme?.toMap() ?? {});
+    TextStyle rootStyle = initialRootStyle;
+    bool hasChanges = initialTheme != null;
+
+    TextStyle styleFor(String key) {
+      return themeStyles[key] ?? const TextStyle(color: Colors.white);
+    }
+
+    TextStyle updateStyle(String key, {
+      Color? color,
+      FontStyle? fontStyle,
+      FontWeight? fontWeight,
+    }) {
+      final currentStyle = themeStyles[key] ?? const TextStyle(color: Colors.white);
+      final updatedStyle = currentStyle.copyWith(
+        color: color ?? currentStyle.color,
+        fontStyle: fontStyle ?? currentStyle.fontStyle,
+        fontWeight: fontWeight ?? currentStyle.fontWeight,
+      );
+      themeStyles[key] = updatedStyle;
+      hasChanges = true;
+      return updatedStyle;
+    }
+
+    Future<void> pickColor({
+      required Color color,
+      required ValueChanged<Color> onChanged,
+    }) async {
+      await showDialog(
+        context: context,
+        builder: (pickerContext) {
+          Color selectedColor = color;
+          return StatefulBuilder(
+            builder: (context, setPickerState) {
+              return AlertDialog(
+                backgroundColor: appThemeState.appTheme.editorPageDrawerBg,
+                titleTextStyle: TextStyle(
+                  color: appThemeState.appTheme.selectScreenCardTextColor,
+                  fontSize: 25,
+                ),
+                title: const Text('Pick a color!'),
+                content: SingleChildScrollView(
+                  child: Theme(
+                    data: ThemeData(
+                      textTheme: Theme.of(context).textTheme.copyWith(
+                        bodyMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                        bodyLarge: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                        labelMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                        displayMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                        titleMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                      ),
+                    ),
+                    child: ColorPicker(
+                      pickerColor: selectedColor,
+                      labelTypes: const [.hex, .rgb, .hsv, .hsl],
+                      onColorChanged: (nextColor) {
+                        setPickerState(() => selectedColor = nextColor);
+                      },
+                    ),
+                  ),
+                ),
+                actions: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: .circular(5)),
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.red,
+                    ),
+                    child: const Text('Cancel'),
+                    onPressed: () => Navigator.of(pickerContext).pop(),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: .circular(5)),
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white,
+                    ),
+                    child: const Text('Ok'),
+                    onPressed: () {
+                      onChanged(selectedColor);
+                      Navigator.of(pickerContext).pop();
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    }
+
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              final rootColor = rootStyle.backgroundColor ?? Colors.black;
+              final foregroundColor = rootStyle.color ?? Colors.white;
+
+              return AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                backgroundColor: appThemeState.appTheme.scaffoldBg,
+                title: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: appThemeState.appTheme.isDark
+                        ? [Colors.blue.shade800, Colors.blue.shade300]
+                        : [Colors.blue.shade200, Colors.blue.shade100],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.palette,
+                        color: appThemeState.appTheme.isDark ? Colors.white : Colors.purple.shade700,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              existingThemeName == null ? 'Create an editor theme' : 'Edit editor theme',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: appThemeState.appTheme.isDark ? Colors.white : Colors.purple.shade900,
+                              ),
+                            ),
+                            Text(
+                              '${tokenKeys.length + 1} theme fields available',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: appThemeState.appTheme.isDark ? Colors.white70 : Colors.purple.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                content: SizedBox(
+                  width: double.maxFinite,
+                  height: 620,
+                  child: DefaultTextStyle(
+                    style: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                    child: RawScrollbar(
+                      thumbVisibility: true,
+                      thumbColor: appThemeState.appTheme.selectScreenCardTextColor.withAlpha(150),
+                      mainAxisMargin: 25,
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Form(
+                              key: _themeKey,
+                              child: settingsTextField(
+                                themeNameController,
+                                Icons.color_lens,
+                                'Theme name',
+                                appThemeState.appTheme.selectScreenCardTextColor,
+                                'eg: Catppuccin',
+                                (val) => val == null || val.trim().isEmpty ? 'Provide a valid theme name' : null,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 20),
+                            child: Row(
+                              children: [
+                                const Text('Background color'),
+                                IconButton(
+                                  onPressed: () async {
+                                    await pickColor(
+                                      color: rootColor,
+                                      onChanged: (color) {
+                                        setDialogState(() {
+                                          rootStyle = rootStyle.copyWith(backgroundColor: color);
+                                          themeStyles['root'] = rootStyle;
+                                          hasChanges = true;
+                                        });
+                                      },
+                                    );
+                                  },
+                                  icon: Icon(Icons.square, color: rootColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 20),
+                            child: Row(
+                              children: [
+                                const Text('Foreground color'),
+                                IconButton(
+                                  onPressed: () async {
+                                    await pickColor(
+                                      color: foregroundColor,
+                                      onChanged: (color) {
+                                        setDialogState(() {
+                                          rootStyle = rootStyle.copyWith(color: color);
+                                          themeStyles['root'] = rootStyle;
+                                          hasChanges = true;
+                                        });
+                                      },
+                                    );
+                                  },
+                                  icon: Icon(Icons.square, color: foregroundColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ...tokenKeys.map((key) {
+                            final tokenStyle = styleFor(key);
+                            final tokenColor = tokenStyle.color ?? Colors.white;
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 20),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: [
+                                    Text(key),
+                                    IconButton(
+                                      onPressed: () async {
+                                        await pickColor(
+                                          color: tokenColor,
+                                          onChanged: (color) {
+                                            setDialogState(() {
+                                              updateStyle(key, color: color);
+                                            });
+                                          },
+                                        );
+                                      },
+                                      icon: Icon(Icons.square, color: tokenColor),
+                                    ),
+                                    DropdownButton<FontStyle>(
+                                      dropdownColor: appThemeState.appTheme.selectScreenDrawerBg,
+                                      value: tokenStyle.fontStyle ?? FontStyle.normal,
+                                      style: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                                      onChanged: (value) {
+                                        if (value == null) {
+                                          return;
+                                        }
+                                        setDialogState(() {
+                                          updateStyle(key, fontStyle: value);
+                                        });
+                                      },
+                                      items: const [
+                                        DropdownMenuItem(value: FontStyle.italic, child: Text('Italic')),
+                                        DropdownMenuItem(value: FontStyle.normal, child: Text('Normal')),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 3),
+                                    DropdownButton<FontWeight>(
+                                      value: tokenStyle.fontWeight ?? FontWeight.normal,
+                                      style: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                                      dropdownColor: appThemeState.appTheme.selectScreenDrawerBg,
+                                      onChanged: (value) {
+                                        if (value == null) {
+                                          return;
+                                        }
+                                        setDialogState(() {
+                                          updateStyle(key, fontWeight: value);
+                                        });
+                                      },
+                                      items: const [
+                                        DropdownMenuItem(value: FontWeight.bold, child: Text('Bold')),
+                                        DropdownMenuItem(value: FontWeight.normal, child: Text('Normal')),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: appThemeState.appTheme.isDark ? Colors.white70 : Colors.grey.shade700,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: .circular(5)),
+                      backgroundColor: const Color(0xff007acc),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () async {
+                      final themeName = themeNameController.text.trim();
+                      if (themeName.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Name field cannot be empty', style: TextStyle(color: Colors.white)),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final mergedThemes = getMergedHighlightThemes(configState.codeForgeConfig);
+                      if (mergedThemes.containsKey(themeName) && themeName != existingThemeName) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('A theme named "$themeName" already exists', style: const TextStyle(color: Colors.white)),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final originalName = existingThemeName?.trim();
+                      final isRename = originalName != null && originalName != themeName;
+                      if (!hasChanges && !isRename) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please change at least one field', style: TextStyle(color: Colors.white)),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final updatedCustomThemes = Map<String, dynamic>.from(
+                        configState.codeForgeConfig['customEditorThemes'] as Map? ?? {},
+                      );
+                      if (originalName != null && isRename) {
+                        updatedCustomThemes.remove(originalName);
+                      }
+                      updatedCustomThemes[themeName] = CustomEditorTheme.fromMap(themeStyles).toJson();
+
+                      final currentState = Map<String, dynamic>.from(configState.codeForgeConfig)
+                        ..['customEditorThemes'] = updatedCustomThemes
+                        ..['theme'] = themeName;
+                      await _saveCodeForgeConfig(currentState);
+                      if (context.mounted) {
+                        Navigator.of(dialogContext).pop(themeName);
+                      }
+                    },
+                    child: Text(existingThemeName == null ? 'Create & Set theme' : 'Save & Set theme'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("An error occurred: ${e.toString()}")
+      ));
+    }
+    return null;
+  }
+
   @override void dispose() {
     apiController.dispose();
     modelNameController.dispose();
@@ -2005,9 +2390,11 @@ int main() {
                           String selectedTheme = theme;
                           String themeSearchQuery = '';
                           bool hasAutoScrolled = false;
+                          final mergedThemes = getMergedHighlightThemes(configState.codeForgeConfig);
+                          final customThemes = getCustomEditorThemes(configState.codeForgeConfig);
                           return StatefulBuilder(
                             builder: (context, setDialogState) {
-                              final filteredThemes = highlightThemes.entries.where((entry) {
+                              final filteredThemes = mergedThemes.entries.where((entry) {
                                 if (themeSearchQuery.isEmpty) {
                                   return true;
                                 }
@@ -2017,7 +2404,7 @@ int main() {
 
                               WidgetsBinding.instance.addPostFrameCallback((_) {
                                 if (!hasAutoScrolled && themeSearchQuery.isEmpty && themeScroll.hasClients) {
-                                  final selectedIndex = highlightThemes.keys.toList().indexOf(selectedTheme);
+                                  final selectedIndex = mergedThemes.keys.toList().indexOf(selectedTheme);
                                   if (selectedIndex >= 0) {
                                     themeScroll.jumpTo(selectedIndex * 72);
                                   }
@@ -2060,7 +2447,7 @@ int main() {
                                                   ),
                                                 ),
                                                 Text(
-                                                  "${highlightThemes.length} themes available",
+                                                  "${mergedThemes.length} themes available",
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     color: appThemeState.appTheme.isDark
@@ -2138,6 +2525,7 @@ int main() {
                                               final themeName = themeEntry.key;
                                               final themeData = themeEntry.value;
                                               final isSelected = themeName == selectedTheme;
+                                              final isCustomTheme = customThemes.containsKey(themeName);
                                               final bgColor = themeData['root']?.backgroundColor ?? Colors.grey;
                                               final textColor = themeData['root']?.color ?? Colors.white;
 
@@ -2213,6 +2601,96 @@ int main() {
                                                               color: Color(0xff007acc),
                                                               size: 24,
                                                             ),
+                                                          if (isCustomTheme) ...[
+                                                            const SizedBox(width: 8),
+                                                            IconButton(
+                                                              tooltip: 'Edit theme',
+                                                              onPressed: () async {
+                                                                await _showCustomEditorThemeDialog(
+                                                                  context,
+                                                                  appThemeState,
+                                                                  configState,
+                                                                  existingThemeName: themeName,
+                                                                );
+                                                                if (!context.mounted) {
+                                                                  return;
+                                                                }
+                                                                final refreshedConfigState = context.read<ConfigBloc>().state;
+                                                                setDialogState(() {
+                                                                  mergedThemes
+                                                                    ..clear()
+                                                                    ..addAll(getMergedHighlightThemes(refreshedConfigState.codeForgeConfig));
+                                                                  customThemes
+                                                                    ..clear()
+                                                                    ..addAll(getCustomEditorThemes(refreshedConfigState.codeForgeConfig));
+                                                                  selectedTheme = refreshedConfigState.codeForgeConfig['theme']?.toString() ?? selectedTheme;
+                                                                });
+                                                              },
+                                                              color: appThemeState.appTheme.selectScreenCardTextColor,
+                                                              icon: const Icon(Icons.edit_outlined),
+                                                            ),
+                                                            IconButton(
+                                                              tooltip: 'Delete theme',
+                                                              onPressed: () async {
+                                                                await showDialog(
+                                                                  context: context,
+                                                                  builder: (context) => AlertDialog(
+                                                                    backgroundColor: appThemeState.appTheme.isDark ? const Color(0xff181A26) : null,
+                                                                    title: Text(
+                                                                      'Delete theme $themeName?',
+                                                                      style: TextStyle(
+                                                                        color: appThemeState.appTheme.selectScreenCardTextColor,
+                                                                        fontSize: 20,
+                                                                      ),
+                                                                    ),
+                                                                    content: Text(
+                                                                      'Are you sure you want to delete this theme? This action cannot be undone.',
+                                                                      style: TextStyle(
+                                                                        color: appThemeState.appTheme.selectScreenCardTextColor.withAlpha(150),
+                                                                        fontSize: 16,
+                                                                      ),
+                                                                    ),
+                                                                    actions: [
+                                                                      ElevatedButton(
+                                                                        onPressed: () => Navigator.of(context).pop(),
+                                                                        child: Text('Cancel'),
+                                                                      ),
+                                                                      ElevatedButton(
+                                                                        onPressed: () async {
+                                                                          final updatedCustomThemes = Map<String, dynamic>.from(
+                                                                            configState.codeForgeConfig['customEditorThemes'] as Map? ?? {},
+                                                                          );
+                                                                          updatedCustomThemes.remove(themeName);
+                                                                          final updatedConfig = Map<String, dynamic>.from(configState.codeForgeConfig)
+                                                                            ..['customEditorThemes'] = updatedCustomThemes;
+                                                                          if (selectedTheme == themeName) {
+                                                                            updatedConfig['theme'] = _defaultEditorThemeName;
+                                                                            setDialogState(() {
+                                                                              selectedTheme = _defaultEditorThemeName;
+                                                                            });
+                                                                          }
+                                                                          await _saveCodeForgeConfig(updatedConfig);
+                                                                          setDialogState(() {
+                                                                            customThemes.remove(themeName);
+                                                                            mergedThemes
+                                                                              ..clear()
+                                                                              ..addAll(getMergedHighlightThemes(updatedConfig));
+                                                                          });
+                                                                          if(context.mounted) Navigator.pop(context);
+                                                                        },
+                                                                        style: ElevatedButton.styleFrom(
+                                                                          backgroundColor: Colors.red,
+                                                                        ),
+                                                                        child: Text('Delete', style: TextStyle(color: Colors.white)),
+                                                                      )
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              },
+                                                              color: Colors.red,
+                                                              icon: const Icon(Icons.delete_outline),
+                                                            ),
+                                                          ],
                                                         ],
                                                       ),
                                                     ),
@@ -2262,6 +2740,36 @@ int main() {
                       ),
                       settingsTile(
                         (){
+                          _showCustomEditorThemeDialog(context, appThemeState, configState);
+                        },
+                        "Custom Editor Theme",
+                        Stack(
+                          children: [
+                            Icon(
+                              Icons.color_lens,
+                              color: appThemeState.appTheme.selectScreenCardTextColor
+                            ),
+                            Positioned(
+                              bottom: -5,
+                              left: -5,
+                              child: Icon(
+                                Icons.add,
+                                shadows: [
+                                  Shadow(
+                                    color: appThemeState.appTheme.scaffoldBg,
+                                    blurRadius: 10
+                                  )
+                                ],
+                                color: appThemeState.appTheme.selectScreenCardTextColor,
+                                size: 20
+                              )
+                            )
+                          ],
+                        ),
+                        appThemeState.appTheme.isDark,
+                      ),
+                      settingsTile(
+                        (){
                           showDialog(context: context, builder: (dialogContext) {
                             String selectedFont = configState.codeForgeConfig['fontFamily'];
                             return StatefulBuilder(
@@ -2300,7 +2808,7 @@ int main() {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                "Font Style",
+                                                "Font Family",
                                                 style: TextStyle(
                                                   fontSize: 18,
                                                   fontWeight: FontWeight.bold,
@@ -2571,7 +3079,7 @@ int main() {
                               )),
                               enableGuideLines: isIndentEnabled,
                               language: languages[7].language,
-                              editorTheme: highlightThemes[theme],
+                              editorTheme: getMergedHighlightThemes(configState.codeForgeConfig)[theme],
                               textStyle: TextStyle(fontFamily: fontFamily, fontSize: 16),
                               initialText: demoCode,
                               readOnly: true,
@@ -4962,7 +5470,7 @@ int main() {
                                                       iconSize: 23,
                                                       icon: Icon(Icons.delete, color: Colors.red.shade400),
                                                       onPressed: () async {
-                                                        showDialog(
+                                                        await showDialog(
                                                           context: context,
                                                           builder: (context) => AlertDialog(
                                                             backgroundColor: appThemeState.appTheme.isDark ? const Color(0xff181A26) : null,

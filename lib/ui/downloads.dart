@@ -900,8 +900,12 @@ class _DownloadManagerState extends State<DownloadManager> {
     final enginesDir = Directory('$runtimesDir/python/lib/engines-3');
     final osslModulesDir = Directory('$runtimesDir/python/lib/ossl-modules');
 
-    if (!await pythonLibDir.exists() || !await dynloadDir.exists()) {
-      return;
+    if (!await pythonLibDir.exists()) {
+        return;
+    }
+
+    if (!await dynloadDir.exists()) {
+        await dynloadDir.create(recursive: true);
     }
 
     if (!await enginesDir.exists()) {

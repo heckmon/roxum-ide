@@ -6,6 +6,7 @@ import 'package:markdown/markdown.dart' as m;
 import 'package:markdown_widget/markdown_widget.dart';
 import 'package:re_highlight/styles/atom-one-dark.dart';
 import '../bloc/ui_bloc/ui_bloc.dart';
+import '../utils/functions.dart';
 import '../utils/themes.dart';
 
 class MdView extends StatelessWidget {
@@ -23,7 +24,7 @@ class MdView extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = appTheme.isDark;
     final config = isDark ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig;
-    final editorTheme = highlightThemes[theme.codeForgeConfig['theme']];
+    final editorTheme = getMergedHighlightThemes(theme.codeForgeConfig)[theme.codeForgeConfig['theme']];
     return SafeArea(
       child: Scaffold(
         body: MarkdownWidget(

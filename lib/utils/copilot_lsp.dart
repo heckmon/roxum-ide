@@ -357,7 +357,7 @@ class CopilotLsp {
         'initializationOptions': {
           'editorInfo': {
             'name': 'Roxum',
-            'version': '2.2.0',
+            'version': '2.3.0',
           },
           'editorPluginInfo': {
             'name': 'GitHub Copilot for Roxum',
@@ -391,7 +391,7 @@ class CopilotLsp {
       params: {
         'editorInfo': {
           'name': 'Roxum',
-          'version': '2.2.0',
+          'version': '2.3.0',
         },
         'editorPluginInfo': {
           'name': 'GitHub Copilot for Roxum',
