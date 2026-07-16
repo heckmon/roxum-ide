@@ -165,10 +165,10 @@ packages:
     dependency: "direct main"
     description:
       name: dartssh2
-      sha256: "9a2a915c1eab7a430ae0b396519016d6a698414f89edfaac9f9244e6498a9525"
+      sha256: e13ce3ae337347a409e228be0d47befd3f06ba76fefa642b4fe35427ad380a3b
       url: "https://pub.dev"
     source: hosted
-    version: "2.18.0"
+    version: "2.22.1"
   dbus:
     dependency: transitive
     description:
@@ -197,10 +197,10 @@ packages:
     dependency: "direct main"
     description:
       name: equatable
-      sha256: "3e0141505477fd8ad55d6eb4e7776d3fe8430be8e497ccb1521370c3f21a3e2b"
+      sha256: "3bce007a596ff8b3119c45d68aaef631272537c03d30e5d4534dd24bf4c5eaa2"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.8"
+    version: "2.1.0"
   fake_async:
     dependency: transitive
     description:

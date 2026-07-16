@@ -2940,7 +2940,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                         break;
                                       case '.go':
                                         try {
-                                          final soPath = path.join(widget.rootDir, '.roxum-go-run.so');
+                                          final soPath = path.join(tempDir, '.roxum-go-run.so');
                                 
                                           final command =
                                               'export GOROOT="$runtimesDir/go" '
@@ -3067,7 +3067,8 @@ fi
 cargo rustc --release --lib -- --crate-type=cdylib
 so_file="\$(find target -type f -name 'lib*.so' | head -n 1)"
 [ -n "\$so_file" ]
-rustloader "\$so_file"
+cp "\$so_file" "$tempDir/librustapp.so"
+rustloader "$tempDir/librustapp.so"
 ''';
                                 
                                           } else {
