@@ -949,7 +949,7 @@ class CustomModel extends Models {
   @override
   String? get apiKey => null;
   @override
-  String? get model => null;
+  final String? model;
   final String httpMethod;
   final Map<String, String> customHeaders;
   final Map<String, dynamic> Function(String code, String instruction)?
@@ -963,6 +963,7 @@ class CustomModel extends Models {
     required this.customParser,
     this.httpMethod = 'POST',
     this.toolCallingMethod = ToolCallingMethod.openAiCompatible,
+    this.model,
   });
 
   @override

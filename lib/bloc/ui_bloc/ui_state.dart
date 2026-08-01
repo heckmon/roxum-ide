@@ -212,6 +212,7 @@ Models? _modelFromConfig(Map<String, dynamic> modelConfig) {
 
       return CustomModel(
         url: url,
+        model: modelName,
         httpMethod: (modelConfig['httpMethod'] ?? 'POST').toString(),
         toolCallingMethod: parseToolCallingMethod(
           modelConfig['toolCallingMethod'],
