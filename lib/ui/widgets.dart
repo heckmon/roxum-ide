@@ -10000,7 +10000,6 @@ class _AIChatState extends State<AIChat> with SingleTickerProviderStateMixin {
     CopilotChatState chatState, 
     Color textColor, 
     bool isDark,
-    bool githubSignedIn,
     bool copilotSignedIn,
     String? selectedModelId,
   ) {
@@ -11916,11 +11915,9 @@ class _AIChatState extends State<AIChat> with SingleTickerProviderStateMixin {
                       
                       return BlocBuilder<GithubAuthCubit, GithubAuthState>(
                         builder: (context, authState) {
-                          final githubSignedIn = authState.isSignedIn;
                           final copilotSignedIn = context.watch<CopilotBloc>().state.isSignedIn || _copilotSignedInFromPrefs;
-                          final bool copilotModelsAvailable = githubSignedIn || copilotSignedIn;
                           
-                          if (!externalModelConfigured && !copilotModelsAvailable) {
+                          if (!externalModelConfigured && !copilotSignedIn) {
                             return Center(
                               child: Text(
                                 "Chat model is not configured. Either create a model in settings or sign in with GitHub Copilot.",
@@ -11939,7 +11936,7 @@ class _AIChatState extends State<AIChat> with SingleTickerProviderStateMixin {
                                   _updatePendingPolling(aiChatUIState.isGenerating);
                                   final pendingCounts = _pendingDiffCounts(_pendingEdits);
     
-                                  if ((githubSignedIn || copilotSignedIn) && !_requestedCopilotModelRefresh && !chatState.isFetchingModels) {
+                                  if ((copilotSignedIn) && !_requestedCopilotModelRefresh && !chatState.isFetchingModels) {
                                     _requestedCopilotModelRefresh = true;
                                     WidgetsBinding.instance.addPostFrameCallback((_) {
                                       context.read<CopilotChatBloc>().add(CopilotChatFetchModels(forceRefresh: true));
@@ -11994,7 +11991,6 @@ class _AIChatState extends State<AIChat> with SingleTickerProviderStateMixin {
                                                       chatState, 
                                                       textColor, 
                                                       isDark,
-                                                      githubSignedIn,
                                                       copilotSignedIn,
                                                       aiChatUIState.selectedModelId,
                                                     ),
