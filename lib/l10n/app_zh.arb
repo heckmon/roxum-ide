@@ -1,0 +1,205 @@
+{
+  "appTitle": "Roxum",
+  "aboutRoxum": "关于 Roxum",
+  "aboutDeveloper": "关于开发者",
+  "getInTouch": "联系我",
+  "versionLabel": "版本 {version}",
+  "@versionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutDescription": "Roxum 是一款面向 Android 的开源 IDE，内置运行时，并提供与 VSCode 类似的功能。\n它基于 Flutter 构建，目标是为移动开发者提供流畅的使用体验。\n\n如果你愿意支持这个项目，请前往捐赠页面并考虑任意金额的赞助。",
+  "developerIntro": "你好！我是 Athul，一名热衷于构建开源工具和移动应用的工程学生。",
+  "start": "开始",
+  "settings": "设置",
+  "contributeSourceCode": "贡献/源代码",
+  "buyMeACoffee": "请我喝杯咖啡",
+  "privacyPolicy": "隐私政策",
+  "fileManager": "文件管理器",
+  "runtimes": "运行时",
+  "appTheme": "应用主题",
+  "github": "GitHub",
+  "builtInTerminal": "内置终端",
+  "openFile": "打开文件...",
+  "openFolder": "打开文件夹...",
+  "openRepository": "打开仓库...",
+  "openTemplate": "打开模板",
+  "projects": "项目",
+  "recent": "最近",
+  "noRecentActivity": "你还没有任何最近活动",
+  "projectNotFound": "未找到项目！",
+  "fileNotFound": "未找到文件！",
+  "newFileTitle": "新建文件...",
+  "newProject": "新建项目",
+  "projectTemplates": "项目模板",
+  "yourProjects": "你的项目",
+  "createNewFile": "创建一个新文件",
+  "createNewProject": "创建一个带版本控制（Git）的自定义项目",
+  "openExistingProject": "打开现有项目",
+  "enterRepositoryUrl": "输入要克隆的仓库地址",
+  "creatingProject": "正在创建项目...",
+  "cloningRepository": "正在克隆仓库...",
+  "cloningMayTakeTime": "这可能需要几分钟",
+  "failedToOpenFile": "打开文件失败",
+  "selectedFileCouldNotBeOpened": "所选文件无法打开。",
+  "failedToOpenFolder": "打开文件夹失败",
+  "selectedFolderCouldNotBeOpened": "所选文件夹无法打开。",
+  "validFilenameRequired": "请输入有效的文件名",
+  "validRepositoryUrlRequired": "请输入有效的仓库地址",
+  "filenamePlaceholder": "filename.ext",
+  "repositoryUrlPlaceholder": "https://github.com/user/repo.git",
+  "generate": "正在生成...",
+  "generated": "已生成 🎉",
+  "runtimeSetupRequired": "需要运行时设置",
+  "beforeCreatingTemplateInstall": "在创建此模板前，请先安装：{requirements}。",
+  "@beforeCreatingTemplateInstall": {
+    "placeholders": {
+      "requirements": {
+        "type": "String"
+      }
+    }
+  },
+  "openDownloadsToInstallFirst": "先打开下载页面进行安装。",
+  "projectAlreadyExists": "项目已存在",
+  "projectAlreadyExistsBody": "同名项目已存在。要覆盖它吗？",
+  "overwrite": "覆盖",
+  "permissionDenied": "权限被拒绝",
+  "areYouSureDeleteProject": "你确定要删除这个项目吗？",
+  "actionCannotBeUndone": "此操作无法撤销。",
+  "failedToOpenTheProject": "打开项目失败：{error}",
+  "@failedToOpenTheProject": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "webTemplateTitle": "Web",
+  "webTemplateSubtitle": "一个使用 HTML、CSS 和 JavaScript 文件的简单网页项目",
+  "viteAppTemplateTitle": "Vite 应用",
+  "viteAppTemplateSubtitle": "创建一个 Vite 应用。",
+  "dartAppTemplateTitle": "Dart 应用",
+  "dartAppTemplateSubtitle": "创建一个 Dart 控制台应用。",
+  "rustAppTemplateTitle": "Rust 应用",
+  "rustAppTemplateSubtitle": "创建一个 Rust 项目。",
+  "dartRuntime": "Dart 运行时",
+  "rustRuntime": "Rust 运行时",
+  "packageUpdatesAvailable": "下载中有 {count} 个软件包更新可用。",
+  "@packageUpdatesAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "projectsFilesTemplatesSharedStorage": "项目、文件和模板现在位于共享存储中。",
+  "directoryAlreadyExists": "目录“{name}”已存在",
+  "@directoryAlreadyExists": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCloneRepo": "克隆仓库失败。",
+  "ok": "确定",
+  "cancel": "取消",
+  "create": "创建",
+  "openDownloads": "打开下载",
+  "copilotSetupRequired": "需要配置 Copilot",
+  "nodeRuntimeRequired": "需要 Node 运行时",
+  "loginToGitHubCopilot": "登录 GitHub Copilot",
+  "connecting": "正在连接...",
+  "signedInAs": "已登录为 {user}",
+  "@signedInAs": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "githubCopilotConnected": "GitHub Copilot 已连接",
+  "copilotNotAuthorized": "Copilot 未授权",
+  "connectionError": "连接错误",
+  "signOut": "退出登录",
+  "signedOutFromCopilot": "已从 Copilot 退出登录",
+  "tryAgain": "重试",
+  "codeCopied": "代码已复制！",
+  "waitTillDownloadFinishes": "请等待当前下载完成。",
+  "clangRuntimeRequired": "在下载 Rust 或 Go 之前需要 Clang 运行时。",
+  "openingWebView": "正在打开网页视图...",
+  "couldNotStartViteServer": "无法启动 Vite 服务器。打开终端查看日志。",
+  "failedToOpenPreview": "打开预览失败：{error}",
+  "@failedToOpenPreview": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncedBackToSourceFolder": "已同步回源文件夹。",
+  "syncBackFailed": "同步回源失败。",
+  "saveFile": "保存文件",
+  "exportFolder": "导出文件夹",
+  "exportComplete": "导出完成。",
+  "exportFailed": "导出失败：{error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "createFolder": "创建文件夹",
+  "createFile": "创建文件",
+  "folderAlreadyExists": "文件夹已存在。",
+  "sessionNumber": "会话 {count}",
+  "@sessionNumber": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newSessionCreated": "已创建新会话：{title}",
+  "@newSessionCreated": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "copy": "复制",
+  "paste": "粘贴",
+  "cut": "剪切",
+  "delete": "删除",
+  "rename": "重命名",
+  "search": "搜索",
+  "newFile": "新建文件",
+  "newFolder": "新建文件夹",
+  "cloneRepo": "克隆仓库",
+  "projectName": "项目名称",
+  "repoUrl": "仓库地址",
+  "clone": "克隆",
+  "or": "或",
+  "supportVia": "或通过以下方式支持：",
+  "post": "POST",
+  "get": "GET",
+  "openAICompatible": "兼容 OpenAI",
+  "anthropicMessages": "Anthropic 消息格式",
+  "geminiFunctionCalling": "Gemini 函数调用",
+  "noneDisableAgenticTools": "无（禁用代理工具）",
+  "modelIdAlreadyExists": "模型 ID“{modelId}”已存在",
+  "@modelIdAlreadyExists": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "modelNameAsPerProviderApi": "按提供方 API 的模型名称",
+  "apiEndpointPlaceholder": "https://api.example.com/v1/chat/completions"
+}

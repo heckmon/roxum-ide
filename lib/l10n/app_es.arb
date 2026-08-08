@@ -1,0 +1,205 @@
+{
+  "appTitle": "Roxum",
+  "aboutRoxum": "Acerca de Roxum",
+  "aboutDeveloper": "Acerca del desarrollador",
+  "getInTouch": "Ponte en contacto",
+  "versionLabel": "Versión {version}",
+  "@versionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutDescription": "Roxum es un IDE de código abierto para Android con runtimes integrados y funciones similares a VSCode.\nConstruido con Flutter, busca ofrecer una experiencia fluida para desarrolladores en movimiento.\n\nSi quieres apoyar este proyecto, visita la página de donaciones y considera hacer una contribución de cualquier importe.",
+  "developerIntro": "¡Hola! Soy Athul, un estudiante de ingeniería apasionado por crear herramientas de código abierto y aplicaciones móviles.",
+  "start": "Inicio",
+  "settings": "Ajustes",
+  "contributeSourceCode": "Contribuir/Código fuente",
+  "buyMeACoffee": "Invítame a un café",
+  "privacyPolicy": "Política de privacidad",
+  "fileManager": "Gestor de archivos",
+  "runtimes": "Runtimes",
+  "appTheme": "Tema de la app",
+  "github": "GitHub",
+  "builtInTerminal": "Terminal integrada",
+  "openFile": "Abrir archivo...",
+  "openFolder": "Abrir carpeta...",
+  "openRepository": "Abrir repositorio...",
+  "openTemplate": "Abrir plantilla",
+  "projects": "Proyectos",
+  "recent": "Reciente",
+  "noRecentActivity": "No tienes actividad reciente",
+  "projectNotFound": "¡Proyecto no encontrado!",
+  "fileNotFound": "¡Archivo no encontrado!",
+  "newFileTitle": "Nuevo archivo...",
+  "newProject": "Nuevo proyecto",
+  "projectTemplates": "Plantillas de proyecto",
+  "yourProjects": "Tus proyectos",
+  "createNewFile": "Crear un archivo nuevo",
+  "createNewProject": "Crear un proyecto personalizado nuevo con control de versiones (Git)",
+  "openExistingProject": "Abrir proyecto existente",
+  "enterRepositoryUrl": "Introduce la URL del repositorio para clonar",
+  "creatingProject": "Creando proyecto...",
+  "cloningRepository": "Clonando repositorio...",
+  "cloningMayTakeTime": "Esto puede tardar unos minutos",
+  "failedToOpenFile": "No se pudo abrir el archivo",
+  "selectedFileCouldNotBeOpened": "No se pudo abrir el archivo seleccionado.",
+  "failedToOpenFolder": "No se pudo abrir la carpeta",
+  "selectedFolderCouldNotBeOpened": "No se pudo abrir la carpeta seleccionada.",
+  "validFilenameRequired": "Introduce un nombre de archivo válido",
+  "validRepositoryUrlRequired": "Introduce una URL de repositorio válida",
+  "filenamePlaceholder": "filename.ext",
+  "repositoryUrlPlaceholder": "https://github.com/user/repo.git",
+  "generate": "Generando...",
+  "generated": "Generado 🎉",
+  "runtimeSetupRequired": "Se requiere configuración del runtime",
+  "beforeCreatingTemplateInstall": "Antes de crear esta plantilla, instala: {requirements}.",
+  "@beforeCreatingTemplateInstall": {
+    "placeholders": {
+      "requirements": {
+        "type": "String"
+      }
+    }
+  },
+  "openDownloadsToInstallFirst": "Abre Descargas para instalarlo primero.",
+  "projectAlreadyExists": "El proyecto ya existe",
+  "projectAlreadyExistsBody": "Ya existe un proyecto con este nombre. ¿Quieres sobrescribirlo?",
+  "overwrite": "Sobrescribir",
+  "permissionDenied": "Permiso denegado",
+  "areYouSureDeleteProject": "¿Seguro que quieres eliminar este proyecto?",
+  "actionCannotBeUndone": "Esta acción no se puede deshacer.",
+  "failedToOpenTheProject": "No se pudo abrir el proyecto: {error}",
+  "@failedToOpenTheProject": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "webTemplateTitle": "Web",
+  "webTemplateSubtitle": "Proyecto web simple con archivos HTML, CSS y JavaScript",
+  "viteAppTemplateTitle": "Aplicación Vite",
+  "viteAppTemplateSubtitle": "Crear una aplicación Vite.",
+  "dartAppTemplateTitle": "Aplicación Dart",
+  "dartAppTemplateSubtitle": "Crear una aplicación de consola Dart.",
+  "rustAppTemplateTitle": "Aplicación Rust",
+  "rustAppTemplateSubtitle": "Crear un proyecto Rust.",
+  "dartRuntime": "Runtime de Dart",
+  "rustRuntime": "Runtime de Rust",
+  "packageUpdatesAvailable": "Hay {count} actualización(es) de paquetes disponibles en Descargas.",
+  "@packageUpdatesAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "projectsFilesTemplatesSharedStorage": "Los proyectos, archivos y plantillas ahora están en el almacenamiento compartido.",
+  "directoryAlreadyExists": "El directorio \"{name}\" ya existe",
+  "@directoryAlreadyExists": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToCloneRepo": "No se pudo clonar el repositorio.",
+  "ok": "OK",
+  "cancel": "Cancelar",
+  "create": "Crear",
+  "openDownloads": "Abrir descargas",
+  "copilotSetupRequired": "Se requiere configurar Copilot",
+  "nodeRuntimeRequired": "Se requiere el runtime de Node",
+  "loginToGitHubCopilot": "Iniciar sesión en GitHub Copilot",
+  "connecting": "Conectando...",
+  "signedInAs": "Has iniciado sesión como {user}",
+  "@signedInAs": {
+    "placeholders": {
+      "user": {
+        "type": "String"
+      }
+    }
+  },
+  "githubCopilotConnected": "GitHub Copilot conectado",
+  "copilotNotAuthorized": "Copilot no autorizado",
+  "connectionError": "Error de conexión",
+  "signOut": "Cerrar sesión",
+  "signedOutFromCopilot": "Sesión cerrada en Copilot",
+  "tryAgain": "Reintentar",
+  "codeCopied": "¡Código copiado!",
+  "waitTillDownloadFinishes": "Espera a que termine la descarga existente.",
+  "clangRuntimeRequired": "Se requiere el runtime de Clang antes de descargar Rust o Go.",
+  "openingWebView": "Abriendo vista web...",
+  "couldNotStartViteServer": "No se pudo iniciar el servidor Vite. Abre la terminal para ver los registros.",
+  "failedToOpenPreview": "No se pudo abrir la vista previa: {error}",
+  "@failedToOpenPreview": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "syncedBackToSourceFolder": "Sincronizado de vuelta a la carpeta de origen.",
+  "syncBackFailed": "La sincronización de vuelta falló.",
+  "saveFile": "Guardar archivo",
+  "exportFolder": "Exportar carpeta",
+  "exportComplete": "Exportación completada.",
+  "exportFailed": "Exportación fallida: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "createFolder": "Crear carpeta",
+  "createFile": "Crear archivo",
+  "folderAlreadyExists": "La carpeta ya existe.",
+  "sessionNumber": "Sesión {count}",
+  "@sessionNumber": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "newSessionCreated": "Nueva sesión creada: {title}",
+  "@newSessionCreated": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "copy": "Copiar",
+  "paste": "Pegar",
+  "cut": "Cortar",
+  "delete": "Eliminar",
+  "rename": "Renombrar",
+  "search": "Buscar",
+  "newFile": "Nuevo archivo",
+  "newFolder": "Nueva carpeta",
+  "cloneRepo": "Clonar repositorio",
+  "projectName": "Nombre del proyecto",
+  "repoUrl": "URL del repositorio",
+  "clone": "Clonar",
+  "or": "O",
+  "supportVia": "O apoya vía:",
+  "post": "POST",
+  "get": "GET",
+  "openAICompatible": "Compatible con OpenAI",
+  "anthropicMessages": "Mensajes de Anthropic",
+  "geminiFunctionCalling": "Llamadas a funciones de Gemini",
+  "noneDisableAgenticTools": "Ninguno (desactivar herramientas agénticas)",
+  "modelIdAlreadyExists": "El ID del modelo \"{modelId}\" ya existe",
+  "@modelIdAlreadyExists": {
+    "placeholders": {
+      "modelId": {
+        "type": "String"
+      }
+    }
+  },
+  "modelNameAsPerProviderApi": "nombre del modelo según la API del proveedor",
+  "apiEndpointPlaceholder": "https://api.example.com/v1/chat/completions"
+}

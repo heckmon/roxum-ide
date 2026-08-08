@@ -578,6 +578,7 @@ class _CodeEditorState extends State<CodeEditor> with AutomaticKeepAliveClientMi
                   final primaryMode = widget.language.language;
 
                   return CodeForge(
+                    tabSize: 2,
                     key: ValueKey('${widget.filePath.path}:${widget.language.name}'),
                     horizontalScrollController: null,
                     verticalScrollController: null,
@@ -12842,10 +12843,14 @@ Widget settingsTextField(
   Color labelColor,
   String? hintText,
   String? Function(String?) validator,
-  [bool obscure = false]
+  [
+    bool obscure = false,
+    void Function(String)? onChanged
+  ]
 ){
   return TextFormField(
     controller: controller,
+    onChanged: onChanged,
     style: TextStyle(
       color: labelColor
     ),

@@ -1,7 +1,7 @@
 name: roxum
 description: "A minimal and powerful IDE for Android."
 publish_to: 'none'
-version: 2.3.2+38
+version: 2.4.0+39
 
 environment:
   sdk: ^3.12.2
@@ -9,7 +9,7 @@ environment:
 dependencies:
   android_intent_plus: ^6.0.0
   bloc: ^9.2.1
-  code_forge: ^10.7.0
+  code_forge: ^10.10.1
   cryptography: ^2.9.0
   dartssh2: ^2.22.5
   diff_match_patch: ^0.4.1
@@ -24,7 +24,10 @@ dependencies:
   flutter_inappwebview: ^6.1.5
   flutter_json: ^0.1.0
   flutter_launcher_icons: ^0.14.4
-  flutter_pdfview: ^1.4.4
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+  flutter_pdfview: ^1.4.5
   flutter_pty: ^0.4.1
   flutter_secure_storage: ^10.3.1
   flutter_svg: ^2.3.0
@@ -50,6 +53,7 @@ dev_dependencies:
     sdk: flutter
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/icons/

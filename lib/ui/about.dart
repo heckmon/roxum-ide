@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:roxum/bloc/ui_bloc/ui_bloc.dart';
@@ -9,10 +10,11 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final color = context.read<AppThemeBloc>().state.appTheme.selectScreenCardTextColor;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('About Roxum'),
+        title: Text(l10n.aboutRoxum),
         titleTextStyle: TextStyle(
           color: color,
           fontWeight: FontWeight.bold,
@@ -33,7 +35,7 @@ class AboutPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Roxum',
+                l10n.appTitle,
                 style: TextStyle(
                   color: color,
                   fontSize: 28,
@@ -41,13 +43,13 @@ class AboutPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Version 2.3.2',
+              Text(
+                l10n.versionLabel('2.3.2'),
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 24),
               Text(
-                'Roxum is an open-source IDE for android with built in runtimes and features similar to VSCode.\nBuilt with Flutter, it aims to provide a seamless experience for developers on the go.\n\nIf you\'d like to support this project, please visit the donation page and consider making a contribution of any amount',
+                l10n.aboutDescription,
                 style: TextStyle(
                   color: color,
                   fontWeight: FontWeight.w600,
@@ -56,14 +58,14 @@ class AboutPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                "About the developer",
+                l10n.aboutDeveloper,
                 style: TextStyle(
                   color: color,
                   fontSize: 19,
                 ),
               ),
               const SizedBox(height: 20),
-                Text("Hi! I'm Athul, an engineering student passionate about building open-source tools and mobile apps.",
+                Text(l10n.developerIntro,
                   style: TextStyle(
                     color: color,
                     fontWeight: FontWeight.bold,
@@ -79,7 +81,7 @@ class AboutPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 18),
-                      Text("Get in touch"),
+                      Text(l10n.getInTouch),
                       Row(
                         children: [
                           IconButton(

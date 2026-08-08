@@ -426,7 +426,7 @@ final langc = Language(
   extension: ['c'],
   details:'A powerful, low-level language widely used in system programming.',
   language: builtinAllLanguages['c'],
-  helloWorld:'#include <stdio.h> \n\nint main(){\n  printf("Hello, World\n");\n  return 0;\n}',
+  helloWorld:'#include <stdio.h> \n\nint main(){\n  printf("Hello, World!");\n  return 0;\n}',
   command: 'clang',
   icon: SvgPicture.asset('assets/material_icons/c.svg',height: 35,width: 35),
   type: 'compiled',

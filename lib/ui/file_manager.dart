@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'package:path/path.dart' as path;
 
 import '../bloc/ui_bloc/ui_bloc.dart';
@@ -366,6 +367,7 @@ class _FileManagerPageState extends State<FileManagerPage> {
   }
 
   Future<void> _downloadToStorage(FileSystemEntity entity) async {
+    final l10n = AppLocalizations.of(context)!;
     final metadata = await _readSourceMetadata(entity);
     if (metadata != null && metadata['sourceUri'] is String && (metadata['sourceUri'] as String).isNotEmpty) {
       final shouldSync = await _confirmOverwriteExternalTarget(entity);
@@ -382,7 +384,7 @@ class _FileManagerPageState extends State<FileManagerPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Synced back to source folder.' : 'Sync back failed.'),
+          content: Text(success ? l10n.syncedBackToSourceFolder : l10n.syncBackFailed),
         ),
       );
       return;
@@ -391,7 +393,7 @@ class _FileManagerPageState extends State<FileManagerPage> {
     try {
       if (entity is File) {
         final savePath = await selectDir(
-          dialogeTitle: 'Save file',
+          dialogeTitle: l10n.saveFile,
           fileName: path.basename(entity.path),
           initialDirectory: entity.parent.path,
           bytes: await entity.readAsBytes(),
@@ -412,7 +414,7 @@ class _FileManagerPageState extends State<FileManagerPage> {
           recurseSubDirs: true,
         );
         final savePath = await selectDir(
-          dialogeTitle: 'Export folder',
+          dialogeTitle: l10n.exportFolder,
           fileName: path.basename(tempZip.path),
           initialDirectory: entity.parent.path,
           bytes: await tempZip.readAsBytes(),
@@ -429,25 +431,24 @@ class _FileManagerPageState extends State<FileManagerPage> {
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Export complete.')),
+        SnackBar(content: Text(l10n.exportComplete)),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Export failed: $e')),
+        SnackBar(content: Text(l10n.exportFailed(e.toString()))),
       );
     }
   }
 
   Future<void> _createFolder() async {
-    final name = await _promptForName(title: 'Create folder');
+    final l10n = AppLocalizations.of(context)!;
+    final name = await _promptForName(title: l10n.createFolder);
     if (name == null) return;
     final folder = Directory(path.join(_currentDir.path, name));
     if (await folder.exists()) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Folder already exists.')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.folderAlreadyExists)));
       return;
     }
     await folder.create(recursive: true);
@@ -456,7 +457,8 @@ class _FileManagerPageState extends State<FileManagerPage> {
   }
 
   Future<void> _createFile() async {
-    final name = await _promptForName(title: 'Create file');
+    final l10n = AppLocalizations.of(context)!;
+    final name = await _promptForName(title: l10n.createFile);
     if (name == null) return;
     final file = File(path.join(_currentDir.path, name));
     if (await file.exists()) {

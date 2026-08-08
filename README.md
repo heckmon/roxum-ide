@@ -15,16 +15,28 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
   <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60">
 </a>
 
-## What's new in version 2:
-- **Added SSH support for connecting with remote systems.**
-- **Added built-in Termux support for using Termux as a backend.**
-- **Option to download and load local GGUF LLM models for offline chat and code completion as requested in [#9](https://github.com/heckmon/roxum-ide/issues/9) and [#16](https://github.com/heckmon/roxum-ide/issues/16)**
-- **Added search bar for themes as requested in [#11](https://github.com/heckmon/roxum-ide/issues/11).**
-- **Migrated the [editor](https://github.com/heckmon/code_forge) backend to rust.**
-- **Replaced JDT-LS with kmp-lsp, which provides LSP support for Java, Kotlin and Swift.**
-- **Fixed [#15](https://github.com/heckmon/roxum-ide/issues/15) and [#14](https://github.com/heckmon/roxum-ide/issues/14), if it still persists, termux can be used.**
-- **[#10](https://github.com/heckmon/roxum-ide/issues/10) and [#18](https://github.com/heckmon/roxum-ide/issues/18) Can be solved by using the new termux backend.**
+## Feature list:
+- **Completely free and open source.**
+- **Built-in Termux support for using Termux as a backend.**
+- **Download or load local GGUF LLM models for offline chat and code completion.**
+- **Offline compilers and extensions for popular languages.**
+- **245 built-in themes and, an option for creating custom themes.**
+- **Built-in terminal.**
+- **Rust based editor backend using rope and sum tree data structures, similar to the zed editor.**
+- **AI Code Completion.**
+- **LSP support (suggesions, completions, error highlighting, hover info, etc).**
+- **Git and Github intergration.**
+- **SSH support for connecting with remote systems.**  
+- **Intergrate with external AI providers for agentic editing.**
 
+## What's new in 2.4.0:
+  - Added localization support for:
+    - Chinese as requested in [#38](https://github.com/heckmon/roxum-ide/issues/38) and [#7](https://github.com/heckmon/roxum-ide/issues/7).
+    - Spanish
+    - French
+    - Portuguese
+
+---
 ### Gallery
 
  <table>

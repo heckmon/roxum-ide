@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -120,15 +121,16 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
   Future<void> _maybeShowStorageMigrationNotice() async {
     if (_didShowStorageMigrationToast) return;
     _didShowStorageMigrationToast = true;
+    final l10n = AppLocalizations.of(context)!;
 
     final prefs = await SharedPreferences.getInstance();
     final shouldShow = prefs.getBool(sharedStorageMigrationNoticeKey) ?? false;
     if (!mounted || !shouldShow) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Projects, Files and Templates now live in shared storage.'),
-        duration: Duration(seconds: 4),
+      SnackBar(
+        content: Text(l10n.projectsFilesTemplatesSharedStorage),
+        duration: const Duration(seconds: 4),
       ),
     );
     await prefs.setBool(sharedStorageMigrationNoticeKey, false);
@@ -169,6 +171,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
     BuildContext context,
     StreamController<double> progressController,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final targetDir = Directory("$projectDir/$repoName");
 
     if (targetDir.existsSync()) {
@@ -177,7 +180,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Directory "$repoName" already exists'),
+            content: Text(l10n.directoryAlreadyExists(repoName)),
             backgroundColor: Colors.orange,
             duration: const Duration(seconds: 2),
           ),
@@ -244,7 +247,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                   Icon(Icons.info_outline, color: Colors.red, size: 48),
                   const SizedBox(height: 16),
                   Text(
-                    "Failed to clone the repo.",
+                    l10n.failedToCloneRepo,
                     style: TextStyle(
                       color: context
                         .read<AppThemeBloc>()
@@ -272,7 +275,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: const Text("OK"),
+                    child: Text(l10n.ok),
                   ),
                 ],
               ),
@@ -289,6 +292,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     context.read<GithubAuthCubit>().refresh();
     return BlocBuilder<AppThemeBloc, AppThemeState>(
       builder: (context, appThemestate) {
@@ -301,9 +305,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
             _didShowPackageUpdateToast = true;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  '${state.totalUpdateCount} package update(s) available in Downloads.',
-                ),
+                content: Text(l10n.packageUpdatesAvailable(state.totalUpdateCount)),
               ),
             );
           },
@@ -323,7 +325,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                       ),
                     );
                   },
-                  "Settings",
+                  l10n.settings,
                   const Icon(
                     Icons.settings,
                     color: Colors.blueGrey,
@@ -345,7 +347,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                         ),
                       );
                     },
-                    "Contribute/Source code",
+                    l10n.contributeSourceCode,
                     FaIcon(
                       FontAwesomeIcons.githubAlt,
                       color: appThemestate.appTheme.isDark
@@ -370,7 +372,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                         ),
                       );
                     },
-                    "About",
+                    l10n.aboutRoxum,
                     Image.asset(
                       'assets/icons/about-512.png',
                       height: 25.5,
@@ -387,7 +389,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                         transitionsBuilder: (context, animation, _, child) => SizeTransition(sizeFactor: animation, child: child),
                       ),
                     ),
-                    "Buy me a coffee",
+                    l10n.buyMeACoffee,
                     SvgPicture.asset(
                       width: 29,
                       height: 29,
@@ -403,7 +405,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                   padding: const EdgeInsets.only(left: 1.5),
                   child: drawerTile(
                     () async => await launchUrl(Uri.parse("https://heckmon.github.io/roxum-privacy-policy/")),
-                    "Privacy policy",
+                    l10n.privacyPolicy,
                     Icon(
                       Icons.shield,
                       size: 26,
@@ -418,7 +420,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
             backgroundColor: Colors.transparent,
             actions: [
               IconButton(
-                tooltip: 'File manager',
+                tooltip: l10n.fileManager,
                 onPressed: () {
                   Navigator.of(context).push(
                     PageRouteBuilder(
@@ -439,7 +441,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                 child: BlocBuilder<PackageCatalogCubit, PackageCatalogState>(
                   builder: (context, packageState) {
                     return IconButton(
-                      tooltip: "Runtimes",
+                      tooltip: l10n.runtimes,
                       onPressed: () {
                         Navigator.of(context).push(
                           PageRouteBuilder(
@@ -652,7 +654,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                 },
               ),
               IconButton(
-                tooltip: "App theme",
+                tooltip: l10n.appTheme,
                 onPressed: () async {
                   final prefs = await SharedPreferences.getInstance();
                   final String? current = prefs.getString("savedAppTheme");
@@ -677,7 +679,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
               Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: IconButton(
-                  tooltip: "Github",
+                  tooltip: l10n.github,
                   onPressed: () => Navigator.of(context).push(
                     PageRouteBuilder(
                       pageBuilder: (context, animation, secondaryAnimation) => GithubPage(),
@@ -742,7 +744,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                 Padding(
                   padding: const EdgeInsets.only(left: 30, top: 18),
                   child: Text(
-                    "Start",
+                    l10n.start,
                     style: TextStyle(
                       color: appThemestate.appTheme.selectScreenCardTextColor,
                       fontSize: 35,
@@ -800,7 +802,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Text(
-                                      "Create a new file",
+                                      l10n.createNewFile,
                                       style: TextStyle(
                                         color: appThemestate.appTheme.selectScreenCardTextColor,
                                         fontSize: 20,
@@ -820,7 +822,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                   cursorColor: const Color(0xff5090c8),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return "Please enter a valid filename";
+                                      return l10n.validFilenameRequired;
                                     }
                                     return null;
                                   },
@@ -829,7 +831,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                     hintStyle: TextStyle(
                                       color: Colors.grey[500],
                                     ),
-                                    hintText: " filename.ext",
+                                    hintText: l10n.filenamePlaceholder,
                                     filled: true,
                                     fillColor: appThemestate.appTheme.isDark
                                       ? Colors.white.withValues(alpha: 0.05)
@@ -868,7 +870,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                       ),
                                     ),
                                     child: Text(
-                                      "Cancel",
+                                      l10n.cancel,
                                       style: TextStyle(
                                         color: Colors.grey[600],
                                         fontWeight: FontWeight.w500,
@@ -924,8 +926,8 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                       ),
                                       elevation: 2,
                                     ),
-                                    child: const Text(
-                                      "Create",
+                                    child: Text(
+                                      l10n.create,
                                       style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -939,7 +941,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                       ),
                     );
                   },
-                  "New File...",
+                  l10n.newFileTitle,
                   const FaIcon(FontAwesomeIcons.fileCirclePlus),
                   appThemestate.appTheme.isDark,
                 ),
@@ -1016,7 +1018,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                 ),
                                 const SizedBox(height: 20),
                                 Text(
-                                  "Failed to open file",
+                                  l10n.failedToOpenFile,
                                   style: TextStyle(
                                     color: appThemestate.appTheme.selectScreenCardTextColor,
                                     fontSize: 20,
@@ -1025,7 +1027,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  "The selected file could not be opened.",
+                                  l10n.selectedFileCouldNotBeOpened,
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: 14,
@@ -1047,7 +1049,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                     elevation: 2,
                                   ),
                                   child: const Text(
-                                    "OK",
+                                    'OK',
                                     style: TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                 ),
@@ -1059,7 +1061,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                       }
                     }
                   }
-                  }, "Open File...",
+                  }, l10n.openFile,
                   const FaIcon(FontAwesomeIcons.fileImport),
                   appThemestate.appTheme.isDark,
                 ),
@@ -1132,7 +1134,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                 ),
                                 const SizedBox(height: 20),
                                 Text(
-                                  "Failed to open folder",
+                                  l10n.failedToOpenFolder,
                                   style: TextStyle(
                                     color: appThemestate.appTheme.selectScreenCardTextColor,
                                     fontSize: 20,
@@ -1141,7 +1143,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  "The selected folder could not be opened.",
+                                  l10n.selectedFolderCouldNotBeOpened,
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: 14,
@@ -1174,7 +1176,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                       );
                     }
                   }},
-                  "Open Folder...",
+                  l10n.openFolder,
                   const FaIcon(FontAwesomeIcons.solidFolderOpen),
                   appThemestate.appTheme.isDark,
                 ),
@@ -1226,7 +1228,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                     const SizedBox(width: 16),
                                     Expanded(
                                       child: Text(
-                                        "Clone Repository",
+                                        l10n.cloneRepo,
                                         style: TextStyle(
                                           color: appThemestate.appTheme.selectScreenCardTextColor,
                                           fontSize: 20,
@@ -1238,7 +1240,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  "Enter the repository URL to clone",
+                                  l10n.enterRepositoryUrl,
                                   style: TextStyle(
                                     color: Colors.grey[600],
                                     fontSize: 14,
@@ -1254,7 +1256,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                     cursorColor: const Color(0xff5090c8),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return "Please enter a valid repository URL";
+                                        return l10n.validRepositoryUrlRequired;
                                       }
                                       return null;
                                     },
@@ -1262,7 +1264,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                       hintStyle: TextStyle(
                                         color: Colors.grey[500],
                                       ),
-                                      hintText: " https://github.com/user/repo.git",
+                                      hintText: l10n.repositoryUrlPlaceholder,
                                       filled: true,
                                       fillColor: appThemestate.appTheme.isDark
                                         ? Colors.white.withValues(alpha: 0.05)
@@ -1304,7 +1306,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                         ),
                                       ),
                                       child: Text(
-                                        "Cancel",
+                                        l10n.cancel,
                                         style: TextStyle(
                                           color: Colors.grey[600],
                                           fontWeight: FontWeight.w500,
@@ -1368,7 +1370,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                                         height: 20,
                                                       ),
                                                       Text(
-                                                        "Cloning repository...",
+                                                        l10n.cloningRepository,
                                                         style: TextStyle(
                                                           color: appThemestate.appTheme.selectScreenCardTextColor,
                                                           fontSize: 18,
@@ -1377,7 +1379,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                                       ),
                                                       const SizedBox(height: 8),
                                                       Text(
-                                                        "This may take a few minutes",
+                                                        l10n.cloningMayTakeTime,
                                                         style: TextStyle(
                                                           color: Colors.grey[600],
                                                           fontSize: 14,
@@ -1436,7 +1438,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                         elevation: 2,
                                       ),
                                       child: const Text(
-                                        "Clone",
+                                        'Clone',
                                         style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -1452,7 +1454,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                     );
                   },
                   val: 4,
-                  "Open Repository...",
+                  l10n.openRepository,
                   SvgPicture.asset(
                     'assets/icons/code-branch-solid.svg',
                     height: 28,
@@ -1513,7 +1515,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                   ),
                                   const SizedBox(width: 12.5),
                                   Text(
-                                    "Projects",
+                                    l10n.projects,
                                     style: TextStyle(
                                       fontSize: 16.5,
                                       color: appThemestate
@@ -1562,7 +1564,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                   ),
                                   const SizedBox(width: 5),
                                   Text(
-                                    "Open Template",
+                                    l10n.openTemplate,
                                     style: TextStyle(
                                       color: appThemestate.appTheme.selectScreenCardTextColor,
                                       fontSize: 16.5,
@@ -1584,7 +1586,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Recent",
+                        l10n.recent,
                         style: TextStyle(
                           color: appThemestate.appTheme.selectScreenCardTextColor,
                           fontWeight: appThemestate.appTheme.isDark
@@ -1603,14 +1605,12 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                               .toList();
                           return recentData.isEmpty
                             ? Text(
-                                "You don't have any recent activity",
+                              l10n.noRecentActivity,
                                 style: TextStyle(
-                                  color: appThemestate
-                                      .appTheme
-                                      .selectScreenCardTextColor,
+                                  color: appThemestate.appTheme.selectScreenCardTextColor,
                                   fontWeight: appThemestate.appTheme.isDark
-                                      ? FontWeight.w300
-                                      : FontWeight.w500,
+                                    ? FontWeight.w300
+                                    : FontWeight.w500,
                                   fontSize: 18,
                                 ),
                               )
@@ -1646,8 +1646,8 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                                 SnackBar(
                                                   content: Text(
                                                     isProject
-                                                      ? "Project not found !"
-                                                      : "File not found !",
+                                                      ? l10n.projectNotFound
+                                                      : l10n.fileNotFound,
                                                   ),
                                                 ),
                                               );
@@ -1708,7 +1708,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                           title: Text(
                                             exists
                                               ? path.basename(entryPath)
-                                              : "${path.basename(entryPath)} - ${isProject ? 'Project' : 'File'} not found",
+                                              : "${path.basename(entryPath)} - ${isProject ? l10n.projectNotFound : l10n.fileNotFound}",
                                             style: const TextStyle(
                                               fontSize: 17,
                                             ),

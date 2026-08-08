@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'package:path/path.dart' as path;
 import 'package:roxum/ui/editor_page.dart';
 import 'package:roxum/utils/proj_temps.dart';
@@ -89,6 +90,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
     AppTheme appTheme,
     List<TemplateRequirement> missing,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final missingNames = missing.map((item) => item.title).join(' and ');
 
     await showDialog(
@@ -99,17 +101,17 @@ class _ProjectScreenState extends State<ProjectScreen> {
               ? const Color(0xff2b2b2b)
               : const Color.fromARGB(255, 240, 240, 240),
           title: Text(
-            'Runtime Setup Required',
+            l10n.runtimeSetupRequired,
             style: TextStyle(color: appTheme.selectScreenCardTextColor),
           ),
           content: Text(
-            'Before creating this template, please install: $missingNames.\n\nOpen Downloads to install it first.',
+            '${l10n.beforeCreatingTemplateInstall(missingNames)}\n\n${l10n.openDownloadsToInstallFirst}',
             style: TextStyle(color: appTheme.selectScreenCardTextColor),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -123,7 +125,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   ),
                 );
               },
-              child: const Text('Open Downloads'),
+              child: Text(l10n.openDownloads),
             ),
           ],
         );
@@ -132,6 +134,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
   }
 
   void _showNewProjectDialog(BuildContext context, AppTheme appTheme) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -170,7 +173,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      "New Project",
+                      l10n.newProject,
                       style: TextStyle(
                         color: appTheme.selectScreenCardTextColor,
                         fontSize: 20,
@@ -189,7 +192,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                 cursorColor: const Color(0xff5090c8),
                 decoration: InputDecoration(
                   hintStyle: TextStyle(color: Colors.grey[500]),
-                  hintText: "Project name",
+                  hintText: l10n.projectName,
                   filled: true,
                   fillColor: appTheme.isDark
                     ? Colors.white.withValues(alpha: 0.05)
@@ -217,7 +220,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                       ),
                     ),
                     child: Text(
-                      "Cancel",
+                      l10n.cancel,
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontWeight: FontWeight.w500,
@@ -253,8 +256,8 @@ class _ProjectScreenState extends State<ProjectScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    child: const Text(
-                      "Create",
+                    child: Text(
+                      l10n.create,
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
@@ -357,6 +360,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return BlocBuilder<AppThemeBloc, AppThemeState>(
       builder: (context, appThemestate) {
         final appTheme = appThemestate.appTheme;
@@ -369,7 +373,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
               }
               if (snapshot.hasError) {
                 return AlertDialog(
-                  title: Text("Permission denied", style: TextStyle(color: Colors.grey[400], fontSize: 20)),
+                  title: Text(l10n.permissionDenied, style: TextStyle(color: Colors.grey[400], fontSize: 20)),
                   backgroundColor: const Color(0xff2b2b2b),
                   icon: const Icon(Icons.error_outline, size: 35),
                   iconColor: Colors.red[600],
@@ -379,7 +383,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                       onPressed: () {
                         Navigator.of(context).popUntil((route) => route.isFirst);
                       },
-                      child: const Text("OK"),
+                      child: Text(l10n.ok),
                     ),
                   ],
                 );
@@ -393,8 +397,8 @@ class _ProjectScreenState extends State<ProjectScreen> {
                   children: [
                     const SizedBox(height: 75),
                     projectTile(
-                      "New Project",
-                      "Create a new custom project with version control (Git)",
+                      l10n.newProject,
+                      l10n.createNewProject,
                       const Icon(Icons.folder_special_rounded, color: Color(0xffffc928), size: 28),
                       appTheme.selectScreenCardsBg,
                       () => _showNewProjectDialog(context, appTheme),
@@ -413,7 +417,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                         
                         final projects = projectsSnapshot.data!;
                         return _buildCollapsibleSection(
-                          title: "Your Projects",
+                          title: l10n.yourProjects,
                           isExpanded: _yourProjectsExpanded,
                           onToggle: () => setState(() => _yourProjectsExpanded = !_yourProjectsExpanded),
                           itemCount: projects.length,
@@ -422,7 +426,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: projectTile(
                               path.basename(dir.path),
-                              "Open existing project",
+                              l10n.openExistingProject,
                               const Icon(Icons.folder, color: Color(0xff5090c8), size: 28),
                               appTheme.selectScreenCardsBg,
                               () {
@@ -446,14 +450,14 @@ class _ProjectScreenState extends State<ProjectScreen> {
                                         ? const Color(0xff2b2b2b)
                                         : const Color.fromARGB(255, 250, 250, 250),
                                       title: Text(
-                                        'Are you sure want to delete this project?',
+                                        l10n.areYouSureDeleteProject,
                                         style: TextStyle(
                                           color: appTheme.selectScreenCardTextColor,
                                           fontSize: 20
                                         ),
                                       ),
                                       content: Text(
-                                        "This action cannot be undone.",
+                                        l10n.actionCannotBeUndone,
                                         style: TextStyle(
                                           color: appTheme.selectScreenCardTextColor.withAlpha(150),
                                           fontSize: 16
@@ -468,7 +472,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                                             ),
                                             elevation: 2,
                                           ),
-                                          child: Text('Cancel')
+                                          child: Text(l10n.cancel)
                                         ),
                                         ElevatedButton(
                                           onPressed: () {
@@ -487,7 +491,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                                             ),
                                             elevation: 2,
                                           ),
-                                          child: Text('Delete', style: TextStyle(color: Colors.white))
+                                          child: Text(l10n.delete, style: const TextStyle(color: Colors.white))
                                         )
                                       ],
                                     )
@@ -523,7 +527,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                     (() {
                       final pts = projTemps(context);
                       return _buildCollapsibleSection(
-                        title: "Project Templates",
+                        title: l10n.projectTemplates,
                         isExpanded: _templatesExpanded,
                         onToggle: () => setState(() => _templatesExpanded = !_templatesExpanded),
                         itemCount: pts.length,
@@ -629,7 +633,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                                                 if(item is PlainTemplates){
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(
-                                                      content: Text(_generating ? "Generating...": "Generated 🎉"),
+                                                      content: Text(_generating ? l10n.generate : l10n.generated),
                                                       persist: true,
                                                       elevation: 50,
                                                     )
@@ -691,7 +695,7 @@ class _ProjectScreenState extends State<ProjectScreen> {
                                                       } catch (e) {
                                                         if (!context.mounted) return;
                                                         ScaffoldMessenger.of(context).showSnackBar(
-                                                          SnackBar(content: Text("Failed to open the project: ${e.toString()}")),
+                                                          SnackBar(content: Text(l10n.failedToOpenTheProject(e.toString()))),
                                                         );
                                                         debugPrint(e.toString());
                                                       }

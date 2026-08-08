@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
@@ -252,6 +253,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
   }
 
   Future<void> _openVitePreview() async {
+    final l10n = AppLocalizations.of(context)!;
     if (_isOpeningVitePreview || !mounted) return;
     setState(() => _isOpeningVitePreview = true);
 
@@ -263,14 +265,14 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
           canPop: false,
           child: AlertDialog(
             content: Row(
-              children: const [
+              children: [
                 SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2.2),
                 ),
                 SizedBox(width: 12),
-                Expanded(child: Text('Opening web view...')),
+                Expanded(child: Text(l10n.openingWebView)),
               ],
             ),
           ),
@@ -293,8 +295,8 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
 
       if (runningPort == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not start Vite server. Open terminal to inspect logs.'),
+          SnackBar(
+            content: Text(l10n.couldNotStartViteServer),
             backgroundColor: Colors.red,
           ),
         );
@@ -322,7 +324,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
         Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to open preview: $e'),
+            content: Text(l10n.failedToOpenPreview(e.toString())),
             backgroundColor: Colors.red,
           ),
         );

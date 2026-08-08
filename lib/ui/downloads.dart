@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -368,14 +369,15 @@ class _DownloadManagerState extends State<DownloadManager> {
     String? packageParentName,
     Extension? extensionMetadata,
   }) async {
+    final l10n = AppLocalizations.of(context)!;
     final downloadBloc = context.read<DownloadManagerBloc>();
     final normalizedParentName = packageParentName?.toLowerCase();
 
     if (_hasAnotherDownloadInProgress(index)) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Wait till the existing download finishes.'),
+          SnackBar(
+            content: Text(l10n.waitTillDownloadFinishes),
           ),
         );
       }
@@ -387,8 +389,8 @@ class _DownloadManagerState extends State<DownloadManager> {
         !_isClangRuntimeInstalled()) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Clang runtime is required before downloading Rust or Go.'),
+          SnackBar(
+            content: Text(l10n.clangRuntimeRequired),
           ),
         );
       }

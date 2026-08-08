@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'bloc/repo_bloc/repo_bloc.dart';
 import 'bloc/ui_bloc/ui_bloc.dart';
 import 'ui/start_screen.dart';
@@ -91,6 +92,7 @@ class MainApp extends StatelessWidget {
             }
           };
           return MaterialApp(
+            onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
             theme: ThemeData(
               progressIndicatorTheme: progressTheme,
               popupMenuTheme: appThemeState.appTheme.popupBtnTheme,
@@ -102,6 +104,11 @@ class MainApp extends StatelessWidget {
                 selectionHandleColor: Colors.blue,
               ),
             ),
+
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+
+            supportedLocales: AppLocalizations.supportedLocales,
+            
             home: SafeArea(
               top: false,
               child: const StartScreen()

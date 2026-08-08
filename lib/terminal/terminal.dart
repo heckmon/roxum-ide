@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_pty/flutter_pty.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:xterm/xterm.dart';
@@ -328,7 +329,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
 
   String _nextSessionTitle() {
     final count = _sessionRuntimes.length + 1;
-    return 'Session $count';
+    return AppLocalizations.of(context)!.sessionNumber(count);
   }
 
   Future<void> _createSession({
@@ -363,9 +364,10 @@ class _SetupTerminalState extends State<SetupTerminal> {
     await _startPty(runtime, args: args, externalServer: externalServer);
 
     if (showFeedback && mounted) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('New session created: $sessionTitle'),
+          content: Text(l10n.newSessionCreated(sessionTitle)),
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -789,7 +791,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
                   children: [
                     _toolbarButton(
                       icon: Icons.copy,
-                      label: 'Copy',
+                      label: AppLocalizations.of(context)!.copy,
                       onTap: () {
                         final selectedText =
                             runtime.controller.selection != null
@@ -820,7 +822,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
                     ),
                     _toolbarButton(
                       icon: Icons.paste,
-                      label: 'Paste',
+                      label: AppLocalizations.of(context)!.paste,
                       onTap: () async {
                         final data = await Clipboard.getData(
                           Clipboard.kTextPlain,
@@ -1252,7 +1254,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Delete session',
+                          tooltip: AppLocalizations.of(context)!.delete,
                         constraints: const BoxConstraints.tightFor(
                           width: 32,
                           height: 32,

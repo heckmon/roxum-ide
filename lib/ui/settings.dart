@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:roxum/l10n/app_localizations.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -136,7 +137,7 @@ int main() {
     "FireWorks",
     "Custom",
     "LocalLlama"
-    ];
+  ];
 
   @override
   void initState() {
@@ -185,6 +186,7 @@ int main() {
   }
 
   Widget _buildCopilotButton(BuildContext context, CopilotState copilotState, AppThemeState appThemeState) {
+    final l10n = AppLocalizations.of(context)!;
     final status = copilotState.status;
     String buttonText;
     Color buttonColor;
@@ -194,31 +196,31 @@ int main() {
     switch (status) {
       case CopilotStatus.notInitialized:
       case CopilotStatus.notSignedIn:
-        buttonText = "Login to GitHub Copilot";
+        buttonText = l10n.loginToGitHubCopilot;
         buttonColor = Color(0xff007acc);
         onPressed = () => _startCopilotSignIn(context, appThemeState);
         break;
       case CopilotStatus.initializing:
       case CopilotStatus.signingIn:
-        buttonText = "Connecting...";
+        buttonText = l10n.connecting;
         buttonColor = Colors.grey;
         showLoading = true;
         onPressed = null;
         break;
       case CopilotStatus.signedIn:
         buttonText = copilotState.user != null
-            ? "Signed in as ${copilotState.user}"
-            : "GitHub Copilot Connected";
+            ? l10n.signedInAs(copilotState.user!)
+            : l10n.githubCopilotConnected;
         buttonColor = Colors.green;
         onPressed = () => _showCopilotSettings(context, copilotState, appThemeState);
         break;
       case CopilotStatus.notAuthorized:
-        buttonText = "Copilot Not Authorized";
+        buttonText = l10n.copilotNotAuthorized;
         buttonColor = Colors.orange;
         onPressed = () => _showNotAuthorizedDialog(context, appThemeState);
         break;
       case CopilotStatus.error:
-        buttonText = "Connection Error";
+        buttonText = l10n.connectionError;
         buttonColor = Colors.red;
         onPressed = () => _startCopilotSignIn(context, appThemeState);
         break;
@@ -290,6 +292,7 @@ int main() {
     AppThemeState appThemeState,
     List<String> missing,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final textColor = appThemeState.appTheme.selectScreenCardTextColor;
     showDialog(
       context: context,
@@ -298,7 +301,7 @@ int main() {
           backgroundColor: appThemeState.appTheme.isDark
             ? const Color(0xff2b2b2b)
             : const Color.fromARGB(255, 240, 240, 240),
-          title: Text('Copilot Setup Required', style: TextStyle(color: textColor)),
+          title: Text(l10n.copilotSetupRequired, style: TextStyle(color: textColor)),
           content: Text(
             'Before signing in, please install: ${missing.join(' and ')}.\n\nOpen Downloads to install them.',
             style: TextStyle(color: textColor),
@@ -306,7 +309,7 @@ int main() {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -320,7 +323,7 @@ int main() {
                   ),
                 );
               },
-              child: const Text('Open Downloads'),
+              child: Text(l10n.openDownloads),
             ),
           ],
         );
@@ -332,6 +335,7 @@ int main() {
     BuildContext context,
     AppThemeState appThemeState,
   ) {
+    final l10n = AppLocalizations.of(context)!;
     final textColor = appThemeState.appTheme.selectScreenCardTextColor;
     showDialog(
       context: context,
@@ -340,7 +344,7 @@ int main() {
           backgroundColor: appThemeState.appTheme.isDark
             ? const Color(0xff2b2b2b)
             : const Color.fromARGB(255, 240, 240, 240),
-          title: Text('Node Runtime Required', style: TextStyle(color: textColor)),
+          title: Text(l10n.nodeRuntimeRequired, style: TextStyle(color: textColor)),
           content: Text(
             'GitHub Copilot sign-in requires the Node.js runtime.\n\nPlease install Node.js from Downloads before continuing.',
             style: TextStyle(color: textColor),
@@ -348,7 +352,7 @@ int main() {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             ElevatedButton(
               onPressed: () {
@@ -362,7 +366,7 @@ int main() {
                   ),
                 );
               },
-              child: const Text('Open Downloads'),
+              child: Text(l10n.openDownloads),
             ),
           ],
         );
@@ -728,7 +732,7 @@ int main() {
               onPressed: () {
                 context.read<CopilotBloc>().add(CopilotSignInInitiate());
               },
-              child: const Text('Try Again'),
+              child: Text(AppLocalizations.of(context)!.tryAgain),
             ),
           ],
         ),
@@ -948,11 +952,11 @@ int main() {
                       Navigator.pop(dialogContext);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: const Row(
+                          content: Row(
                             children: [
                               Icon(Icons.logout, color: Colors.white, size: 18),
                               SizedBox(width: 8),
-                              Text('Signed out from Copilot'),
+                              Text(AppLocalizations.of(context)!.signedOutFromCopilot),
                             ],
                           ),
                           backgroundColor: Colors.grey[700],
@@ -962,7 +966,7 @@ int main() {
                       );
                     },
                     icon: const Icon(Icons.logout, size: 18),
-                    label: const Text('Sign Out'),
+                    label: Text(AppLocalizations.of(context)!.signOut),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                       side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
