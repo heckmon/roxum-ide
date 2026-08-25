@@ -1065,22 +1065,28 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
         Positioned(
           right: -5,
           top: -6,
-          child: Container(
-            decoration: BoxDecoration(
-              color: badgeColor ?? const Color(0xffd9534f),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: appTheme.editorPageToolbarBg,
-                width: 1.2,
-              ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: 17,
+              minWidth: 17
             ),
-            alignment: Alignment.center,
-            child: Text(
-              count > 99 ? '99+' : '$count',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
+            child: Container(
+              decoration: BoxDecoration(
+                color: badgeColor ?? const Color(0xffd9534f),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: appTheme.editorPageToolbarBg,
+                  width: 1.2,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                count > 99 ? '99+' : '$count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -1752,10 +1758,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
           );
         }
 
-        if ((!snapshot.hasData ||
-                snapshot.data == null ||
-                snapshot.data!.isEmpty) &&
-            !widget.isProject) {
+        if ((!snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) && !widget.isProject) {
           return Scaffold(
             appBar: AppBar(title: const Text('Error')),
             body: Center(
@@ -1785,10 +1788,10 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
 
         final target = !widget.isProject ? snapshot.data![0] as File? : null;
         final lspConfig = !widget.isProject
-            ? snapshot.data!.length > 2
-                  ? snapshot.data![2] as LspConfig?
-                  : null
-            : null;
+          ? snapshot.data!.length > 2
+            ? snapshot.data![2] as LspConfig?
+            : null
+          : null;
 
         if ((target == null || !target.existsSync()) && !widget.isProject) {
           return Scaffold(
@@ -1850,8 +1853,8 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                   undoRedoController: initialUndoController,
                   isActive: true,
                   findController: isPreviewInitial
-                      ? null
-                      : FindController(initialController),
+                    ? null
+                    : FindController(initialController),
                   hscroll: ScrollController(),
                   vscroll: ScrollController(),
                 ),
@@ -1877,10 +1880,10 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
           ],
           child: BlocListener<WorkspaceSearchBloc, WorkspaceSearchState>(
             listenWhen: (previous, current) =>
-                previous.query != current.query ||
-                previous.matchCase != current.matchCase ||
-                previous.matchWholeWord != current.matchWholeWord ||
-                previous.isRegex != current.isRegex,
+              previous.query != current.query ||
+              previous.matchCase != current.matchCase ||
+              previous.matchWholeWord != current.matchWholeWord ||
+              previous.isRegex != current.isRegex,
             listener: (context, searchState) {
               final editorState = context.read<ActiveEditorBloc>().state;
               for (final editor in editorState.activeEditors) {
@@ -1916,8 +1919,8 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                 }
                 return PopScope(
                   canPop:
-                      _allowImmediatePop ||
-                      !_hasUnsavedEditors(editorState.activeEditors),
+                    _allowImmediatePop ||
+                    !_hasUnsavedEditors(editorState.activeEditors),
                   onPopInvokedWithResult: (didPop, result) async {
                     if (didPop) {
                       context.read<ActiveEditorBloc>().add(CloseActiveEditor());
@@ -2504,173 +2507,170 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                       title: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: tabController == null
-                            ? Text(
-                                editorState.activeEditors.isNotEmpty
-                                    ? _displayFileName(
-                                        editorState.activeEditors[0],
-                                      )
-                                    : '',
-                                style: TextStyle(
-                                  color: appTheme.selectScreenCardTextColor,
-                                ),
-                              )
-                            : AnimatedBuilder(
-                                animation: tabController!,
-                                builder: (context, _) {
-                                  int idx = tabController!.index;
-                                  if (idx < 0 || idx >= editorState.activeEditors.length) {
-                                    idx = 0;
-                                  }
-                                  final fileName =
-                                      editorState.activeEditors.isNotEmpty
-                                      ? _displayFileName(
-                                          editorState.activeEditors[idx],
-                                        )
-                                      : '';
-                                  return Text(
-                                    fileName,
-                                    style: TextStyle(
-                                      color: appTheme.selectScreenCardTextColor,
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                      bottom: editorState.activeEditors.isNotEmpty
-                          ? TabBar(
-                              labelPadding: EdgeInsets.zero,
-                              padding: EdgeInsets.zero,
-                              indicator: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(
-                                    color: Color(0xff157dcc),
-                                    width: 2,
-                                  ),
-                                  left: BorderSide(
-                                    color: appTheme.isDark
-                                        ? Colors.grey
-                                        : Colors.blueGrey[600]!,
-                                    width: 0.2,
-                                  ),
-                                  right: BorderSide(
-                                    color: appTheme.isDark
-                                        ? Colors.grey
-                                        : Colors.blueGrey[600]!,
-                                    width: 0.2,
-                                  ),
-                                ),
-                              ),
-                              labelColor: appTheme.selectScreenCardTextColor,
-                              unselectedLabelColor: appTheme.isDark
-                                  ? null
-                                  : Colors.grey[400],
-                              dividerColor: Colors.transparent,
-                              controller: tabController,
-                              isScrollable: true,
-                              tabAlignment: TabAlignment.start,
-                              onTap: (value) {
-                                _syncActiveEditorWithTabIndex(value);
-                                mruOrder.remove(value);
-                                mruOrder.insert(0, value);
-                                if (tabController != null &&
-                                    tabController!.index != value) {
-                                  tabController!.animateTo(value);
-                                }
-                              },
-                              tabs: List.generate(
-                                editorState.activeEditors.length,
-                                (index) {
-                                  return Tab(
-                                    height: 32,
-                                    child: Row(
-                                      children: [
-                                        _buildTabIconForEditor(
-                                          editorState.activeEditors[index],
-                                          appTheme,
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 8,
-                                          ),
-                                          child: Text(
-                                            _displayFileName(
-                                              editorState.activeEditors[index],
-                                            ),
-                                            softWrap: false,
-                                            maxLines: 1,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          padding: EdgeInsets.zero,
-                                          onPressed: () async {
-                                            final List<ActiveEditor>
-                                            currentState = List.from(
-                                              editorState.activeEditors,
-                                            );
-                                            if (currentState.length <= 1) {
-                                              context.read<ActiveEditorBloc>().add(ActiveEditorEvent([]));
-                                              context.read<ActiveEditorBloc>().add(CloseActiveEditor());
-                                              return;
-                                            }
-
-                                            try {
-                                              await currentState[index].dispose();
-                                            } catch (e) {
-                                              debugPrint('Error disposing editor: $e');
-                                            }
-
-                                            if (currentState[index].customTitle?.contains("(Working Tree)",) == true) {
-                                              try {
-                                                await currentState[index].file.delete();
-                                              } catch (e) {
-                                                debugPrint(e.toString());
-                                              }
-                                            }
-
-                                            final wasActive = currentState[index].isActive;
-                                            currentState.removeAt(index);
-                                            mruOrder.remove(index);
-                                            mruOrder = mruOrder
-                                                .map(
-                                                  (i) => i > index ? i - 1 : i,
-                                                )
-                                                .toList();
-                                            if (currentState.isNotEmpty &&
-                                                wasActive) {
-                                              int newActive =
-                                                  mruOrder.isNotEmpty
-                                                  ? mruOrder[0]
-                                                  : 0;
-                                              for (
-                                                int i = 0;
-                                                i < currentState.length;
-                                                i++
-                                              ) {
-                                                currentState[i].isActive =
-                                                    i == newActive;
-                                              }
-                                            }
-                                            if (context.mounted) {
-                                              context.read<ActiveEditorBloc>().add(ActiveEditorEvent(currentState));
-                                            }
-
-                                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                                              final newIndex = currentState.indexWhere(
-                                                (item) => item.isActive == true);
-                                              if (tabController != null && newIndex >= 0 && newIndex < tabController!.length) {
-                                                tabController!.animateTo(newIndex,);
-                                              }
-                                            });
-                                          },
-                                          icon: Icon(Icons.close, size: 20),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
+                          ? Text(
+                              editorState.activeEditors.isNotEmpty
+                                ? _displayFileName(
+                                    editorState.activeEditors[0],
+                                  )
+                                : '',
+                              style: TextStyle(
+                                color: appTheme.selectScreenCardTextColor,
                               ),
                             )
-                          : null,
+                          : AnimatedBuilder(
+                              animation: tabController!,
+                              builder: (context, _) {
+                                int idx = tabController!.index;
+                                if (idx < 0 || idx >= editorState.activeEditors.length) {
+                                  idx = 0;
+                                }
+                                final fileName = editorState.activeEditors.isNotEmpty
+                                  ? _displayFileName(editorState.activeEditors[idx])
+                                  : '';
+                                return Text(
+                                  fileName,
+                                  style: TextStyle(
+                                    color: appTheme.selectScreenCardTextColor,
+                                  ),
+                                );
+                              },
+                            ),
+                      ),
+                      bottom: editorState.activeEditors.isNotEmpty
+                        ? TabBar(
+                          labelPadding: EdgeInsets.zero,
+                          padding: EdgeInsets.zero,
+                          indicator: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(
+                                color: Color(0xff157dcc),
+                                width: 2,
+                              ),
+                              left: BorderSide(
+                                color: appTheme.isDark
+                                    ? Colors.grey
+                                    : Colors.blueGrey[600]!,
+                                width: 0.2,
+                              ),
+                              right: BorderSide(
+                                color: appTheme.isDark
+                                    ? Colors.grey
+                                    : Colors.blueGrey[600]!,
+                                width: 0.2,
+                              ),
+                            ),
+                          ),
+                          labelColor: appTheme.selectScreenCardTextColor,
+                          unselectedLabelColor: appTheme.isDark
+                              ? null
+                              : Colors.grey[400],
+                          dividerColor: Colors.transparent,
+                          controller: tabController,
+                          isScrollable: true,
+                          tabAlignment: TabAlignment.start,
+                          onTap: (value) {
+                            _syncActiveEditorWithTabIndex(value);
+                            mruOrder.remove(value);
+                            mruOrder.insert(0, value);
+                            if (tabController != null &&
+                                tabController!.index != value) {
+                              tabController!.animateTo(value);
+                            }
+                          },
+                          tabs: List.generate(
+                            editorState.activeEditors.length,
+                            (index) {
+                              return Tab(
+                                height: 32,
+                                child: Row(
+                                  children: [
+                                    _buildTabIconForEditor(
+                                      editorState.activeEditors[index],
+                                      appTheme,
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 8,
+                                      ),
+                                      child: Text(
+                                        _displayFileName(
+                                          editorState.activeEditors[index],
+                                        ),
+                                        softWrap: false,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      padding: EdgeInsets.zero,
+                                      onPressed: () async {
+                                        final List<ActiveEditor>
+                                        currentState = List.from(
+                                          editorState.activeEditors,
+                                        );
+                                        if (currentState.length <= 1) {
+                                          context.read<ActiveEditorBloc>().add(ActiveEditorEvent([]));
+                                          context.read<ActiveEditorBloc>().add(CloseActiveEditor());
+                                          return;
+                                        }
+
+                                        try {
+                                          await currentState[index].dispose();
+                                        } catch (e) {
+                                          debugPrint('Error disposing editor: $e');
+                                        }
+
+                                        if (currentState[index].customTitle?.contains("(Working Tree)",) == true) {
+                                          try {
+                                            await currentState[index].file.delete();
+                                          } catch (e) {
+                                            debugPrint(e.toString());
+                                          }
+                                        }
+
+                                        final wasActive = currentState[index].isActive;
+                                        currentState.removeAt(index);
+                                        mruOrder.remove(index);
+                                        mruOrder = mruOrder
+                                            .map(
+                                              (i) => i > index ? i - 1 : i,
+                                            )
+                                            .toList();
+                                        if (currentState.isNotEmpty &&
+                                            wasActive) {
+                                          int newActive =
+                                              mruOrder.isNotEmpty
+                                              ? mruOrder[0]
+                                              : 0;
+                                          for (
+                                            int i = 0;
+                                            i < currentState.length;
+                                            i++
+                                          ) {
+                                            currentState[i].isActive =
+                                                i == newActive;
+                                          }
+                                        }
+                                        if (context.mounted) {
+                                          context.read<ActiveEditorBloc>().add(ActiveEditorEvent(currentState));
+                                        }
+
+                                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                                          final newIndex = currentState.indexWhere(
+                                            (item) => item.isActive == true);
+                                          if (tabController != null && newIndex >= 0 && newIndex < tabController!.length) {
+                                            tabController!.animateTo(newIndex,);
+                                          }
+                                        });
+                                      },
+                                      icon: Icon(Icons.close, size: 20),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                        : null,
                       actions: [
                         if (!autoSaveEnabled)
                           OutlinedButton.icon(
@@ -3641,15 +3641,14 @@ class _SvgPreviewPaneState extends State<_SvgPreviewPane> {
           return LayoutBuilder(
             builder: (context, constraints) {
               final maxWidth = constraints.maxWidth.isFinite
-                  ? constraints.maxWidth
-                  : 480.0;
+                ? constraints.maxWidth
+                : 480.0;
               final maxHeight = constraints.maxHeight.isFinite
-                  ? constraints.maxHeight
-                  : 640.0;
+                ? constraints.maxHeight
+                : 640.0;
 
               final viewWidth = maxWidth > 240 ? maxWidth * 0.92 : maxWidth;
-              final viewHeight =
-                  maxHeight > 240 ? maxHeight * 0.92 : maxHeight;
+              final viewHeight = maxHeight > 240 ? maxHeight * 0.92 : maxHeight;
 
               return InteractiveViewer(
                 minScale: 0.2,

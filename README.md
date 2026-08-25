@@ -29,12 +29,10 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
 - **SSH support for connecting with remote systems.**  
 - **Intergrate with external AI providers for agentic editing.**
 
-## What's new in 2.4.0:
-  - Added localization support for:
-    - Chinese as requested in [#38](https://github.com/heckmon/roxum-ide/issues/38) and [#7](https://github.com/heckmon/roxum-ide/issues/7).
-    - Spanish
-    - French
-    - Portuguese
+## What's new in 2.5.0:
+  - FIX: [#43](https://github.com/heckmon/roxum-ide/issues/43)
+  - FIX: [#20](https://github.com/heckmon/roxum-ide/issues/20)
+  - FEATURE: [#42](https://github.com/heckmon/roxum-ide/issues/42)
 
 ---
 ### Gallery

@@ -555,7 +555,7 @@ class AgenticTools {
       lines.insertAll(insertIndex, insertLines);
       final newContent = lines.join('\n');
 
-      return _writeWithPendingDiff(canonicalPath, oldContent, newContent);
+      return await _writeWithPendingDiff(canonicalPath, oldContent, newContent);
     } catch (e) {
       return ToolResult.error('Error inserting text at line: $e');
     }

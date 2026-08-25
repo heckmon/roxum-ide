@@ -1928,6 +1928,23 @@ int main() {
       required Color color,
       required ValueChanged<Color> onChanged,
     }) async {
+      final argb = color.toARGB32();
+
+      final r = (argb >> 16) & 0xFF;
+      final g = (argb >> 8) & 0xFF;
+      final b = argb & 0xFF;
+      final a = (argb >> 24) & 0xFF;
+
+      final hex =
+          '#${r.toRadixString(16).padLeft(2, '0')}'
+          '${g.toRadixString(16).padLeft(2, '0')}'
+          '${b.toRadixString(16).padLeft(2, '0')}'
+          '${a.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+
+      final hexCtrl = TextEditingController(
+        text: hex,
+      );
+
       await showDialog(
         context: context,
         builder: (pickerContext) {
@@ -1942,23 +1959,42 @@ int main() {
                 ),
                 title: const Text('Pick a color!'),
                 content: SingleChildScrollView(
-                  child: Theme(
-                    data: ThemeData(
-                      textTheme: Theme.of(context).textTheme.copyWith(
-                        bodyMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
-                        bodyLarge: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
-                        labelMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
-                        displayMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
-                        titleMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                  child: Column(
+                    children: [
+                      Theme(
+                        data: ThemeData(
+                          textTheme: Theme.of(context).textTheme.copyWith(
+                            bodyMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                            bodyLarge: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                            labelMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                            displayMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                            titleMedium: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                          ),
+                        ),
+                        child: ColorPicker(
+                          pickerColor: selectedColor,
+                          labelTypes: const [.hex, .rgb, .hsv, .hsl],
+                          onColorChanged: (nextColor) {
+                            setPickerState(() => selectedColor = nextColor);
+                          },
+                          hexInputController: hexCtrl,
+                        ),
                       ),
-                    ),
-                    child: ColorPicker(
-                      pickerColor: selectedColor,
-                      labelTypes: const [.hex, .rgb, .hsv, .hsl],
-                      onColorChanged: (nextColor) {
-                        setPickerState(() => selectedColor = nextColor);
-                      },
-                    ),
+                      TextField(
+                        controller: hexCtrl,
+                        style: const TextStyle(color: Colors.grey),
+                        decoration: const InputDecoration(
+                          filled: true,
+                          fillColor: Colors.transparent,
+                          border: OutlineInputBorder(),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.lightBlue
+                            )
+                          )
+                        ),
+                      )
+                    ],
                   ),
                 ),
                 actions: [

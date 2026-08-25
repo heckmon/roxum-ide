@@ -1,10 +1,10 @@
 name: roxum
 description: "A minimal and powerful IDE for Android."
 publish_to: 'none'
-version: 2.4.0+39
+version: 2.5.0+40
 
 environment:
-  sdk: ^3.12.2
+  sdk: ^3.13.1
 
 dependencies:
   android_intent_plus: ^6.0.0

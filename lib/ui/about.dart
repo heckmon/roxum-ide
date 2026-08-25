@@ -44,7 +44,7 @@ class AboutPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                l10n.versionLabel('2.3.2'),
+                l10n.versionLabel('2.5.0'),
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 24),

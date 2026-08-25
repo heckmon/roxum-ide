@@ -2,3 +2,11 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   errors:
     implementation_imports: ignore
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**

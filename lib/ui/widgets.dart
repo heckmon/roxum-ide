@@ -1511,10 +1511,11 @@ class _EditorPageState extends State<EditorArea> with AutomaticKeepAliveClientMi
         Container(
           height: 24,
           padding: const EdgeInsets.symmetric(horizontal: 8),
+          clipBehavior: .hardEdge,
           decoration: BoxDecoration(
             color: appTheme.isDark
-                ? const Color.fromARGB(255, 25, 25, 25)
-                : const Color.fromARGB(255, 236, 236, 236),
+              ? const Color.fromARGB(255, 25, 25, 25)
+              : const Color.fromARGB(255, 236, 236, 236),
             border: Border(
               top: BorderSide(color: Colors.grey.withValues(alpha: 0.3), width: 0.5),
             ),
@@ -2111,7 +2112,13 @@ class _EditorPageState extends State<EditorArea> with AutomaticKeepAliveClientMi
         ),
       ],
     );
-    return pageContent;
+    
+    return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      child: pageContent,
+    );
   }
 
   @override

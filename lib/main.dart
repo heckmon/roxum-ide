@@ -8,6 +8,7 @@ import 'bloc/ui_bloc/ui_bloc.dart';
 import 'ui/start_screen.dart';
 import 'utils/functions.dart';
 import 'utils/themes.dart';
+import 'terminal/terminal.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,6 +67,16 @@ class MainApp extends StatelessWidget {
         BlocProvider(create: (_) => ChatSessionBloc()..add(LoadChatSessions())),
         BlocProvider(create: (_) => GeneralBloc({"autoSave": jsonDecode(codeForgeConfig)['autoSave'] as bool})),
         BlocProvider(create: (_) => CopilotBloc()),
+        BlocProvider(create: (_) => TerminalSessionBloc(
+          initialFontSize: ((){
+            try {
+              final raw = context.read<ConfigBloc>().state.codeForgeConfig['terminalFontSize'];
+              if (raw is num) return raw.toDouble();
+              if (raw is String) return double.tryParse(raw) ?? 14.0;
+            } catch (_) {}
+            return 14.0;
+          })()
+        )),
         BlocProvider(create: (context) => AIBloc(
           jsonDecode(aiConfig),
           jsonDecode(codeForgeConfig)['isAIEnabled'] as bool,
