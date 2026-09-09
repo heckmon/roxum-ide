@@ -20,6 +20,7 @@ class SetupTerminal extends StatefulWidget {
   final String projectDir;
   final List<String> args;
   final bool useScaffold, showKeyboardMenu, readOnly;
+  final bool isRun;
   final int? sshId, termuxId;
   final String? commandToExecuteInSSH;
 
@@ -30,6 +31,7 @@ class SetupTerminal extends StatefulWidget {
     this.useScaffold = true,
     this.showKeyboardMenu = true,
     this.readOnly = false,
+    this.isRun = false,
     this.sshId,
     this.termuxId,
     this.commandToExecuteInSSH
@@ -293,7 +295,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
     _sessionBloc = context.read<TerminalSessionBloc>();
     sshServerList = context.read<SSHServersCubit>().state.serverList.where((server) => server.isConnected).toList();
     termuxInfo = context.read<TermuxCubit>().state.termInfo;
-    if (_sessionBloc.state.sessions.isNotEmpty) {
+    if (_sessionBloc.state.sessions.isNotEmpty && !widget.isRun) {
       for (final meta in _sessionBloc.state.sessions) {
         if (TerminalRuntimeRegistry.instance.has(meta.id)) {
           _reattachSession(meta.id);
