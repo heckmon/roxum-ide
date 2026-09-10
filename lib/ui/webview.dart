@@ -201,7 +201,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 allowFileAccess: true,
                 allowContentAccess: true,
                 cacheEnabled: false,
-                clearCache: true),
+              ),
               initialUrlRequest: URLRequest(
                 url: WebUri(initialUrl),
               ),
@@ -210,6 +210,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 controller.reload();
               },
               onLoadStart: (controller, url) async {
+
                 await controller.injectJavascriptFileFromAsset(assetFilePath: "assets/webview/eruda.js");
                 await controller.evaluateJavascript(source: """
                         window.flutter_inappwebview.callHandler = window.flutter_inappwebview.callHandler || function() {};

@@ -1399,7 +1399,6 @@ class AgenticTools {
       initialSettings: InAppWebViewSettings(
         javaScriptEnabled: true,
         cacheEnabled: false,
-        clearCache: true,
         userAgent:
             "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/120 Safari/537.36",
       ),

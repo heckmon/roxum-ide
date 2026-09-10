@@ -1477,18 +1477,11 @@ String extractRepoName(String url) {
 }
 
 Future<File?> pickFile() async {
-  final result = await FilePicker.pickFiles(
-    allowMultiple: false,
+  final picked = await FilePicker.pickFile(
     type: FileType.custom,
   );
 
-  if (result == null || result.files.isEmpty) return null;
-
-  final picked = result.files.first;
-
-  if (picked.path == null && picked.bytes == null) {
-    return null;
-  }
+  if (picked == null) return null;
 
   final projectDir = await setupFilesDir();
   final currentFiles = File('${projectDir.path}/.current_files.json');
@@ -1501,20 +1494,13 @@ Future<File?> pickFile() async {
     );
   }
 
-  if (picked.identifier != null) {
-    fileMap[picked.name] = picked.identifier!;
-  }
+  fileMap[picked.name] = picked.uri.toString();
 
   await currentFiles.writeAsString(jsonEncode(fileMap), flush: true);
 
   final targetFile = File('${projectDir.path}/${picked.name}');
 
-  if (picked.bytes != null) {
-    await targetFile.writeAsBytes(picked.bytes!, flush: true);
-  } else {
-    final tempFile = File(picked.path!);
-    await tempFile.copy(targetFile.path);
-  }
+  await targetFile.writeAsBytes(await picked.readAsBytes(), flush: true);
 
   return targetFile;
 }
@@ -1535,15 +1521,16 @@ Future<Directory?> pickDir() async {
 Future<String?> selectDir({
   String? dialogeTitle,
   String? initialDirectory,
-  String? fileName,
-  Uint8List? bytes,
+  required String fileName,
+  required Uint8List bytes,
 }) async {
-  return await FilePicker.saveFile(
+  final uri = await FilePicker.saveFile(
     dialogTitle: dialogeTitle,
     fileName: fileName,
     initialDirectory: initialDirectory,
     bytes: bytes,
   );
+  return uri?.toString();
 }
 
 Future<File?> createFile(

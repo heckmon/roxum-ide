@@ -1800,13 +1800,14 @@ int main() {
   }
 
   Future<void> _loadLocalGgufModel(BuildContext context, AppThemeState appThemeState) async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['gguf'],
     );
-    if (result == null) return;
-    final path = result.files.single.path!;
-    final fileName = result.files.single.name;
+    final path = file?.path;
+    final fileName = file?.name;
+
+    if (fileName == null || path == null) return;
 
     final nameController = TextEditingController(text: fileName.replaceAll('.gguf', ''));
     

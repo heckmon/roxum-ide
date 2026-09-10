@@ -3135,6 +3135,7 @@ rustloader "$soPath"
                                             pageBuilder:(context, animation, scondaryAnimation) => SetupTerminal(
                                               projectDir: widget.rootDir,
                                               args: ["-c", "$command ${filePath.path}"],
+                                              isRun: true,
                                             ),
                                             transitionsBuilder:(context, animation, secondaryAnimation, child,) {
                                               return SizeTransition(
