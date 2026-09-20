@@ -153,6 +153,7 @@ class _StartScreenState extends State<StartScreen> {
       {'src': '$sharedPath/libicudata.so', 'dst': '$libDir/libicudata.so.78'},
       {'src': '$sharedPath/libbash.so', 'dst': '$binDir/bash'},
       {'src': '$sharedPath/libbash.so', 'dst': '$binDir/sh'},
+      {'src': '$sharedPath/librstloader.so', 'dst': '$binDir/rustloader'},
       {'src': '$sharedPath/libgit-remote-https.so', 'dst': '$gitCore/git-remote-https'},
       {'src': '$sharedPath/libgit-remote-https.so', 'dst': '$gitCore/git-remote-http'},
       {'src': '$sharedPath/libccls.so', 'dst': '$binDir/ccls'},
@@ -198,6 +199,7 @@ class _StartScreenState extends State<StartScreen> {
 
     await _refreshRustGoRuntimeSymlinks(sharedPath);
     await _refreshDartRuntimeSymlinks(sharedPath);
+    await _refreshZigRuntimeSymlinks(sharedPath);
 
     if (!File('$certDir/cacert.pem').existsSync()) {
       Directory(certDir).createSync(recursive: true);
@@ -225,6 +227,17 @@ class _StartScreenState extends State<StartScreen> {
         ));
       }
     });
+  }
+
+  Future<void> _refreshZigRuntimeSymlinks(String sharedPath) async {
+    final zigBinDir = Directory('$runtimesDir/dart/bin');
+    if (!await zigBinDir.exists()) {
+      return;
+    }
+    await _ensureSymlink(
+      linkPath: '$binDir/zig',
+      targetPath: '$sharedPath/libzig.so',
+    );
   }
 
   Future<void> _refreshDartRuntimeSymlinks(String sharedPath) async {

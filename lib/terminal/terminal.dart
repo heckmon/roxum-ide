@@ -297,7 +297,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
     termuxInfo = context.read<TermuxCubit>().state.termInfo;
     if (_sessionBloc.state.sessions.isNotEmpty && !widget.isRun) {
       for (final meta in _sessionBloc.state.sessions) {
-        if (TerminalRuntimeRegistry.instance.has(meta.id)) {
+        if (TerminalRuntimeRegistry.instance.has(meta.id) && meta.isRunning) {
           _reattachSession(meta.id);
         } else {
           _restoreSession(meta);
@@ -649,6 +649,9 @@ class _SetupTerminalState extends State<SetupTerminal> {
       'JAVA_HOME': '$runtimesDir/java-21-openjdk',
       'GIT_EXEC_PATH': '$binDir/git-core',
       'GIT_SSL_CAINFO': '$certDir/cacert.pem',
+      'CURL_CA_BUNDLE': '$certDir/cacert.pem',
+      'SSL_CERT_FILE': '$certDir/cacert.pem',
+      'ZIG_LIB_DIR': '$runtimesDir/zig/lib',
       'RUSTFLAGS': '--sysroot $runtimesDir/rust',
       'GOROOT': '$runtimesDir/go',
       'CC': 'clang'

@@ -2783,6 +2783,10 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                           final String runCommand = "node ./${path.basenameWithoutExtension(filePath.path)}.js";
                                           runCodeInTermux(context, "$compileCommand && $runCommand", widget.rootDir, termuxInfo?.id);
                                           break;
+                                        case '.zig': 
+                                          final String runCommand = "zig run ${filePath.path}";
+                                          runCodeInTermux(context, runCommand, widget.rootDir, termuxInfo?.id);
+                                          break;
                                         case ".rs":
                                           final cargoFile = File("${widget.rootDir}/Cargo.toml");
                                 
@@ -2818,6 +2822,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                                 projectDir: widget.rootDir,
                                                 termuxId: termuxInfo?.id,
                                                 commandToExecuteInSSH: "$command ${filePath.path}",
+                                                isRun: true,
                                               ),
                                               transitionsBuilder:(context, animation, secondaryAnimation, child,) {
                                                 return SizeTransition(
@@ -2939,6 +2944,46 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                         final String compileCommand = "tsc ${filePath.path} --outDir ${temp.path}";
                                         final String runCommand = "node ${temp.path}/${path.basenameWithoutExtension(filePath.path)}.js";
                                         runCode(context, "$compileCommand && $runCommand", widget.rootDir);
+                                        break;
+                                      case '.zig':
+                                        final soPath = path.join(tempDir, '.roxum-zig-run.so');
+                                        final command =
+'''
+set -e
+
+wrapper="$tempDir/.roxum_zig_wrapper.zig"
+user_file="$tempDir/tempCode.zig"
+
+cleanup() {
+    rm -f "\$wrapper" "\$user_file" "$soPath"
+}
+
+trap cleanup EXIT
+
+cp "${filePath.path}" "\$user_file"
+
+cat > "\$wrapper" <<'EOF'
+const user = @import("tempCode.zig");
+
+export fn __entry() void {
+    user.main();
+}
+EOF
+
+cd "$tempDir"
+
+zig build-lib "\$wrapper" \\
+    -dynamic \\
+    -fPIC \\
+    -target aarch64-linux-android \\
+    --sysroot "$runtimesDir/clang/sysroot" \\
+    -lc \\
+    -femit-bin="$soPath"
+
+rustloader "$soPath"
+''';
+
+                                        runCode(context, command, widget.rootDir);
                                         break;
                                       case '.go':
                                         try {
@@ -3309,7 +3354,7 @@ rustloader "$soPath"
                                               sshId: !isTermux ? currentlySelectedTerminalID : null,
                                               termuxId: isTermux ? currentlySelectedTerminalID : null,
                                             ),
-                                          transitionsBuilder:(context, animation, secondaryAnimation, child,) {
+                                          transitionsBuilder:(context, animation, secondaryAnimation, child) {
                                             return SizeTransition(
                                               sizeFactor: animation,
                                               child: child,

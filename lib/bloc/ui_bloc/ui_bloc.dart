@@ -926,7 +926,9 @@ class CopilotBloc extends Bloc<CopilotEvent, CopilotState> {
           status: CopilotStatus.notAuthorized,
           signInPayload: null,
         ));
-      } else {        _expectingSignIn = false;        emit(state.copyWith(
+      } else {
+        _expectingSignIn = false;
+        emit(state.copyWith(
           status: CopilotStatus.notSignedIn,
           signInPayload: null,
         ));

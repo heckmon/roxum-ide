@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:html/dom.dart' as h;
 import 'package:html/dom_parsing.dart';
 import 'package:html/parser.dart';
@@ -31,6 +32,10 @@ class MdView extends StatelessWidget {
           data: data,
           config: config.copy(configs: [
             PreConfig(
+              textStyle: TextStyle(
+                fontSize: 16,
+                fontFamily: context.read<ConfigBloc>().state.codeForgeConfig['fontFamily']
+              ),
               theme: editorTheme ?? atomOneDarkTheme,
               styleNotMatched: TextStyle(color:editorTheme!['root']!.color),
               decoration: BoxDecoration(
@@ -47,8 +52,7 @@ class MdView extends StatelessWidget {
             ),
           ]),
           markdownGenerator: MarkdownGenerator(
-            textGenerator: (node, config, visitor) =>
-                CustomTextNode(node.textContent, config, visitor),
+            textGenerator: (node, config, visitor) => CustomTextNode(node.textContent, config, visitor),
           ),
         ),
       ),

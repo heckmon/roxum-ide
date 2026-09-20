@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:roxum/l10n/app_localizations.dart';
 import 'bloc/repo_bloc/repo_bloc.dart';
@@ -35,7 +37,7 @@ Future<void> main() async {
   );
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends StatefulWidget {
   final String recent, appTheme, codeForgeConfig, aiConfig, modelSelected;
   final List<SSHInfo> sshSServerList;
   final SSHPrivateKey? termuxInfo;
@@ -51,21 +53,57 @@ class MainApp extends StatelessWidget {
     });
 
   @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  Timer? _navBarHideTimer;
+  
+  @override
+  void initState() {
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top],
+    );
+
+    SystemChrome.setSystemUIChangeCallback((systemOverlaysAreVisible) async {
+      if (systemOverlaysAreVisible) {
+        _navBarHideTimer?.cancel();
+        _navBarHideTimer = Timer(const Duration(seconds: 3), () {
+          SystemChrome.setEnabledSystemUIMode(
+            SystemUiMode.manual,
+            overlays: [SystemUiOverlay.top],
+          );
+        });
+      }
+    });
+    
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _navBarHideTimer?.cancel();
+    SystemChrome.setSystemUIChangeCallback(null);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => ConfigBloc(codeForgeConfig: jsonDecode(codeForgeConfig))),
+        BlocProvider(create: (_) => ConfigBloc(codeForgeConfig: jsonDecode(widget.codeForgeConfig))),
         BlocProvider(create: (_) => FolderBloc()),
         BlocProvider(create: (_) => GitCommitBloc()),
-        BlocProvider(create: (_) => RecentBloc(recent: jsonDecode(recent))),
-        BlocProvider(create: (_) => AppThemeBloc(appTheme: themeMap[appTheme]!)),
+        BlocProvider(create: (_) => RecentBloc(recent: jsonDecode(widget.recent))),
+        BlocProvider(create: (_) => AppThemeBloc(appTheme: themeMap[widget.appTheme]!)),
         BlocProvider(create: (_) => WebViewBloc()),
         BlocProvider(create: (_) => MenuSearchBloc()),
         BlocProvider(create: (_) => DownloadManagerBloc()),
         BlocProvider(create: (_) => PackageCatalogCubit()),
         BlocProvider(create: (_) => GithubAuthCubit()),
         BlocProvider(create: (_) => ChatSessionBloc()..add(LoadChatSessions())),
-        BlocProvider(create: (_) => GeneralBloc({"autoSave": jsonDecode(codeForgeConfig)['autoSave'] as bool})),
+        BlocProvider(create: (_) => GeneralBloc({"autoSave": jsonDecode(widget.codeForgeConfig)['autoSave'] as bool})),
         BlocProvider(create: (_) => CopilotBloc()),
         BlocProvider(create: (_) => TerminalSessionBloc(
           initialFontSize: ((){
@@ -78,17 +116,17 @@ class MainApp extends StatelessWidget {
           })()
         )),
         BlocProvider(create: (context) => AIBloc(
-          jsonDecode(aiConfig),
-          jsonDecode(codeForgeConfig)['isAIEnabled'] as bool,
-          jsonDecode(modelSelected),
-          jsonDecode(codeForgeConfig)['manualCompletion'] as bool,
+          jsonDecode(widget.aiConfig),
+          jsonDecode(widget.codeForgeConfig)['isAIEnabled'] as bool,
+          jsonDecode(widget.modelSelected),
+          jsonDecode(widget.codeForgeConfig)['manualCompletion'] as bool,
           copilotBloc: context.read<CopilotBloc>(),
         )),
         BlocProvider(create: (_) => CopilotChatBloc()),
         BlocProvider(create: (_) => LocalLlamaBloc()),
         BlocProvider(create: (_) => GgufDownloadCubit()),
-        BlocProvider(create: (_) => SSHServersCubit(sshSServerList)),
-        BlocProvider(create: (_) => TermuxCubit(termuxInfo)),
+        BlocProvider(create: (_) => SSHServersCubit(widget.sshSServerList)),
+        BlocProvider(create: (_) => TermuxCubit(widget.termuxInfo)),
         BlocProvider(create: (_) => CurrentlySelectedTerminalCubit()),
         BlocProvider(create: (_) => SelectedRuntimeEnvironmentCubit()),
       ],

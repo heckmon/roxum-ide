@@ -1,10 +1,10 @@
 name: roxum
 description: "A minimal and powerful IDE for Android."
 publish_to: 'none'
-version: 2.6.0+41
+version: 2.7.0+42
 
 environment:
-  sdk: ^3.13.1
+  sdk: ^3.13.4
 
 dependencies:
   android_intent_plus: ^6.0.0
@@ -14,7 +14,7 @@ dependencies:
   dartssh2: ^4.1.0
   diff_match_patch: ^0.4.1
   equatable: ^2.1.0
-  file_picker: ^12.2.0
+  file_picker: ^13.1.0
   flutter:
     sdk: flutter
   flutter_archive: ^6.3.1

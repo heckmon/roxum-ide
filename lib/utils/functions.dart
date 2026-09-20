@@ -1788,7 +1788,11 @@ void runCode(BuildContext context, String command, String rootDir) {
   try {
     Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder: (context, animation, scondaryAnimation) => SetupTerminal(projectDir: rootDir, args: ["-c", command]),
+        pageBuilder: (context, animation, scondaryAnimation) => SetupTerminal(
+          projectDir: rootDir,
+          args: ["-c", command],
+          isRun: true,
+        ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SizeTransition(sizeFactor: animation, child: child);
         },
@@ -1810,6 +1814,7 @@ void runCodeInTermux(BuildContext context, String command, String rootDir, int? 
           projectDir: rootDir,
           termuxId: id,
           commandToExecuteInSSH: command,
+          isRun: true,
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return SizeTransition(sizeFactor: animation, child: child);
@@ -2106,6 +2111,12 @@ Future<LspConfig?> startLspServer({
       }
     }
 
+    final initializationOptions = normalizedExt == 'zig'
+      ? {
+          'zig_exe_path': '$binDir/zig',
+        }
+      : <String, dynamic>{};
+
     final config = await LspStdioConfig.start(
       executable: resolvedExecutable,
       capabilities: capabilities ?? const LspClientCapabilities(),
@@ -2113,6 +2124,7 @@ Future<LspConfig?> startLspServer({
       environment: resolvedEnvironment,
       workspacePath: workspacePath,
       languageId: langId.toLowerCase(),
+      initializationOptions: initializationOptions
     );
     return config;
   } catch (e) {
