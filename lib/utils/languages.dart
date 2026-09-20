@@ -901,6 +901,22 @@ final langverilog = Language(
   helloWorld: 'module hello;\ninitial begin\n  \$display("Hello, World!");\nend\nendmodule',
   icon: SvgPicture.asset('assets/material_icons/verilog.svg',height: 35,width: 35),
 );
+final langZig = Language(
+  name: 'Zig',
+  extension: ['zig'],
+  details: 'Zig is a general-purpose programming language and toolchain for maintaining robust, optimal and reusable software.',
+  language: null,
+  helloWorld: 'const std = @import("std");\npub fn main() void {\n  std.debug.print("Hello, World!\n");\n}',
+  icon: SvgPicture.asset('assets/material_icons/zig.svg',height: 35,width: 35)
+);
+final langOCaml = Language(
+  name: 'OCaml',
+  extension: ['ml', 'mli'],
+  details: 'An industrial-strength functional programming language with an emphasis on expressiveness and safety.',
+  language: builtinAllLanguages['ocaml'],
+  helloWorld: 'let () = print_endline "Hello, World!"',
+  icon: SvgPicture.asset('assets/material_icons/ocaml.svg',height: 35,width: 35)
+);
 
 List<Language> languages = [
   langtxt,
@@ -957,7 +973,9 @@ List<Language> languages = [
   langjulia,
   langlisp,
   langverilog,
-  langH
+  langH,
+  langZig,
+  langOCaml
 ];
 
 final List<RunTime> runtimes = [];
