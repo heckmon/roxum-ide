@@ -108,6 +108,18 @@ class PackageCatalogService {
       parentName: 'rust',
       iconUrl: 'assets/material_icons/rust.svg',
     ),
+
+    RunTime(
+      name: 'Zig',
+      version: '0.16.0',
+      details: 'The zig compiler and runtime.',
+      url: '',
+      archiveName: 'zig.zip',
+      archiveSize: 199,
+      parentName: 'zig',
+      iconUrl: 'assets/material_icons/zig.svg',
+    ),
+
     RunTime(
       name: 'Go',
       version: '1.26.1',
@@ -118,6 +130,7 @@ class PackageCatalogService {
       parentName: 'go',
       iconUrl: 'assets/material_icons/go_gopher.svg',
     ),
+
     RunTime(
       name: 'Lua',
       version: '5.5',
@@ -219,6 +232,19 @@ class PackageCatalogService {
       serverFile: const [],
       iconUrl: 'assets/icons/kmp-logo.png',
       githubUrl: 'https://github.com/Hessesian/kmp-lsp',
+    ),
+    Extension(
+      name: 'ZLS',
+      details: 'Language server for java, kotlin and swift',
+      archiveName: 'libkmplsp.so',
+      parentName: 'zls',
+      archiveSize: 19,
+      url: '',
+      fileExtension: const ['zig'],
+      serverFile: const [],
+      iconUrl: 'assets/icons/zls-opt.svg',
+      iconSize: 15,
+      githubUrl: 'https://github.com/zigtools/zls',
     ),
     Extension(
       name: 'VScode-extracted LSP Servers',
@@ -353,8 +379,7 @@ class PackageCatalogService {
     return merged;
   }
 
-  static Future<({List<RunTime> runtimes, List<Extension> extensions})>
-      _loadInstalledCatalog() async {
+  static Future<({List<RunTime> runtimes, List<Extension> extensions})> _loadInstalledCatalog() async {
     final runtimeDir = Directory(runtimesDir);
     final extensionDirPath = Directory(extensionDir);
     final installedRuntimes = <RunTime>[];
@@ -369,8 +394,7 @@ class PackageCatalogService {
         final packageFile = File('${dir.path}/rsx-package.json');
         if (!packageFile.existsSync()) continue;
         try {
-          final parsed = jsonDecode(await packageFile.readAsString())
-              as Map<String, dynamic>;
+          final parsed = jsonDecode(await packageFile.readAsString()) as Map<String, dynamic>;
           installedRuntimes.add(RunTime.fromJson(parsed));
         } catch (e) {
           debugPrint('Failed to parse runtime metadata at ${dir.path}: $e');
@@ -399,8 +423,7 @@ class PackageCatalogService {
     return (runtimes: installedRuntimes, extensions: installedExtensions);
   }
 
-  static ({Set<String> runtimeUpdates, Set<String> extensionUpdates})
-      _buildUpdateSets({
+  static ({Set<String> runtimeUpdates, Set<String> extensionUpdates}) _buildUpdateSets({
     required List<RunTime> catalogRuntimes,
     required List<Extension> catalogExtensions,
     required List<RunTime> installedRuntimes,

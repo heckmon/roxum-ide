@@ -29,9 +29,13 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
 - **SSH support for connecting with remote systems.**  
 - **Intergrate with external AI providers for agentic editing.**
 
-## What's new in 2.6.0:
-  - FIX: Run button bug
-  - Upgraded the Android gradle plugin to 9.0.1
+## What's new in 2.7.0:
+  - FIX: [#50](https://github.com/heckmon/roxum-ide/issues/50)
+  - FIX: [#49](https://github.com/heckmon/roxum-ide/issues/49)
+  - FIX: Run button opens terminal.
+  - FIX: Cargo TLS certificate error.
+  - FEATURE: Added ZIG compiler.
+  - FEATURE: Added ZLS LSP server.
 
 ---
 ### Gallery
@@ -84,6 +88,8 @@ Make sure that [git-lfs](https://git-lfs.com/) is installed in your system and a
 > [!NOTE]
 > 
 > To include all compilers, interpreters and extensions in the build, we build it as a standalone `aab` file, which is bigger compared to the APK downloaded from the Play Store. The Play Store build is smaller because these external dependencies are downloaded on demand when the user requests the particular compiler/interpreter/extension.
+
+Make sure to install necessary Flutter and Android development tools before starting.
 
 ```bash
 cd android && ./gradlew :app:bundleRelease

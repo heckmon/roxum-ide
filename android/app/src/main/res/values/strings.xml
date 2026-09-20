@@ -9,6 +9,7 @@
     <string name="ty_feature_title">Ty Feature</string>
     <string name="rust_analyzer_feature_title">Rust Analyzer Feature</string>
     <string name="gopls_feature_title">Gopls Feature</string>
+    <string name="zls_feature_title">Gopls Feature</string>
     <string name="emmylua_feature_title">EmmyLuaLs Feature</string>
     <string name="bash_language_server_feature_title">Bash Language Server Feature</string>
     <string name="copilot_language_server_feature_title">GitHub Copilot Feature</string>
@@ -18,6 +19,7 @@
     <string name="lua_feature_title">Lua Feature</string>
     <string name="title_java_feature">Java Feature</string>
     <string name="rust_feature_title">Rust Feature</string>
+    <string name="zig_feature_title">Rust Feature</string>
     <string name="go_feature_title">Go Feature</string>
     <string name="title_clang_feature">Clang Feature</string>
 </resources>

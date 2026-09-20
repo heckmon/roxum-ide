@@ -5,6 +5,8 @@ import 'package:re_highlight/languages/all.dart';
 import 'package:re_highlight/re_highlight.dart';
 import 'package:roxum/utils/constants.dart';
 
+import 'additional_grammars/zig.dart';
+
 final txt = Mode();
 final unknown = Mode();
 
@@ -905,9 +907,10 @@ final langZig = Language(
   name: 'Zig',
   extension: ['zig'],
   details: 'Zig is a general-purpose programming language and toolchain for maintaining robust, optimal and reusable software.',
-  language: null,
-  helloWorld: 'const std = @import("std");\npub fn main() void {\n  std.debug.print("Hello, World!\n");\n}',
-  icon: SvgPicture.asset('assets/material_icons/zig.svg',height: 35,width: 35)
+  language: langzig,
+  helloWorld: 'const std = @import("std");\npub fn main() void {\n  std.debug.print("Hello, World!", .{});\n}',
+  icon: SvgPicture.asset('assets/material_icons/zig.svg',height: 35,width: 35),
+  lspExecutable: '/data/data/com.roxum/bin/zls',
 );
 final langOCaml = Language(
   name: 'OCaml',
@@ -933,6 +936,7 @@ List<Language> languages = [
   langcss,
   langkotlin,
   langrust,
+  langZig,
   langgo,
   langcsharp,
   langscss,
@@ -974,7 +978,6 @@ List<Language> languages = [
   langlisp,
   langverilog,
   langH,
-  langZig,
   langOCaml
 ];
 

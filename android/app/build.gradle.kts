@@ -66,6 +66,7 @@ android {
     dynamicFeatures.addAll(
         setOf(
             ":app:rust_feature",
+            ":app:zig_feature",
             ":app:go_feature",
             ":app:ruby_feature",
             ":app:lua_feature",
@@ -77,6 +78,7 @@ android {
             ":app:dart_feature",
             ":app:ty_feature",
             ":app:rust_analyzer_feature",
+            ":app:zls_feature",
             ":app:gopls_feature",
             ":app:emmylua_feature",
             ":app:bash_language_server_feature",

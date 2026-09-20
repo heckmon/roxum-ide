@@ -91,6 +91,12 @@ class _DownloadManagerState extends State<DownloadManager> {
       weight: 80.0,
       displayName: 'Rust',
     ),
+    'zig': _PfdRuntimeConfig(
+      moduleName: 'zig_feature',
+      assetArchiveName: 'zig.zip',
+      weight: 80.0,
+      displayName: 'Zig',
+    ),
     'go': _PfdRuntimeConfig(
       moduleName: 'go_feature',
       assetArchiveName: 'go.zip',
@@ -123,6 +129,12 @@ class _DownloadManagerState extends State<DownloadManager> {
       weight: 80.0,
       displayName: 'rust-analyzer',
     ),
+    'zls': _PfdRuntimeConfig(
+      moduleName: 'zls_feature',
+      requiresExtraction: false,
+      weight: 80.0,
+      displayName: 'zls',
+    ),
     'gopls': _PfdRuntimeConfig(
       moduleName: 'gopls_feature',
       requiresExtraction: false,
@@ -135,7 +147,6 @@ class _DownloadManagerState extends State<DownloadManager> {
       weight: 80.0,
       displayName: 'EmmyLuaLs',
     ),
-    
     'bash-language-server': _PfdRuntimeConfig(
       moduleName: 'bash_language_server_feature',
       assetArchiveName: 'bash-language-server.zip',
@@ -477,8 +488,7 @@ class _DownloadManagerState extends State<DownloadManager> {
     }
 
     final stagedArchiveName = pfdConfig?.assetArchiveName;
-    if (pfdConfig != null &&
-        (stagedArchiveName == null || stagedArchiveName.isEmpty)) {
+    if (pfdConfig != null && (stagedArchiveName == null || stagedArchiveName.isEmpty)) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -500,6 +510,7 @@ class _DownloadManagerState extends State<DownloadManager> {
     final archivePath = pfdConfig != null
       ? "$tempDir/$stagedArchiveName"
       : "$targetDir/$archiveName";
+
     final extractDir = isExtension
       ? extensionDir
       : runtimesDir;
@@ -565,20 +576,29 @@ class _DownloadManagerState extends State<DownloadManager> {
       final Extension metadata = extensionMetadata ?? extensions.firstWhere(
         (item) => item.parentName.toLowerCase() == normalizedParent);
 
-      if (normalizedParent == 'ty') {
-        await _createTyExecutableSymlink();
-      } else if (normalizedParent == 'rust-analyzer') {
-        await _createRustAnalyzerExecutableSymlink();
-      } else if (normalizedParent == 'gopls') {
-        await _createGoplsExecutableSymlink();
-      } else if (normalizedParent == 'emmyluals') {
-        await _createEmmyLuaExecutableSymlink();
-      } else if(normalizedParent == 'kmp-lsp') {
-        await _createKmpLspExecutableSymlink();
-      } else {
-        throw Exception(
-          'Unsupported module-only extension: ${config.displayName}',
-        );
+      switch (normalizedParent) {
+        case 'ty':
+          await _createTyExecutableSymlink();  
+          break;
+        case 'rust-analyzer':
+          await _createRustAnalyzerExecutableSymlink();
+          break;
+        case 'gopls':
+          await _createGoplsExecutableSymlink();
+          break;
+        case 'emmyluals':
+          await _createEmmyLuaExecutableSymlink();
+          break;
+        case 'kmp-lsp':
+          await _createKmpLspExecutableSymlink();
+          break;
+        case 'zls':
+          await _createZLSExecutableSymlink();
+          break;
+        default:
+          throw Exception(
+            'Unsupported module-only extension: ${config.displayName}',
+          );
       }
 
       await _writeInstalledExtensionMetadata(metadata);
@@ -615,6 +635,13 @@ class _DownloadManagerState extends State<DownloadManager> {
       libraryFileName: 'libkmplsp.so',
     );
   }
+
+  Future<void> _createZLSExecutableSymlink() async {
+      await _createModuleExecutableSymlink(
+        executableName: 'zls',
+        libraryFileName: 'libzls.so',
+      );
+    }
 
   Future<void> _createRustAnalyzerExecutableSymlink() async {
     await _createModuleExecutableSymlink(
@@ -863,6 +890,10 @@ class _DownloadManagerState extends State<DownloadManager> {
         await _createRustRuntimeSymlinks();
       }
 
+      if (normalizedRuntimeName == 'zig' || archiveName == 'zig.zip') {
+        await _createZigRuntimeSymlinks();
+      }
+
       if (normalizedRuntimeName == 'go' || archiveName == 'go.zip') {
         await _createGoRuntimeSymlinks();
       }
@@ -985,18 +1016,23 @@ class _DownloadManagerState extends State<DownloadManager> {
     }
   }
 
+  Future<void> _createZigRuntimeSymlinks() async {
+    final sharedPath = await NativeChannel.getLibraryPath();
+    final zigDir = Directory("$runtimesDir/zig");
+
+    if (!await zigDir.exists()) {
+      await zigDir.create(recursive: true);
+    }
+
+    await _ensureSymlink(
+      linkPath: '$binDir/zig',
+      targetPath: '$sharedPath/libzig.so',
+    );
+
+  }
 
   Future<void> _createRustRuntimeSymlinks() async {
     final sharedPath = await NativeChannel.getLibraryPath();
-    final sysBinDir = Directory(binDir);
-    final sysLibDir = Directory(libDir);
-
-    if (!await sysBinDir.exists()) {
-      await sysBinDir.create(recursive: true);
-    }
-    if (!await sysLibDir.exists()) {
-      await sysLibDir.create(recursive: true);
-    }
 
     await _ensureSymlink(
       linkPath: '$binDir/rustc',

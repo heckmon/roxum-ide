@@ -512,8 +512,7 @@ class PackageCatalogState {
     );
   }
 
-  bool get hasUpdates =>
-      runtimeUpdates.isNotEmpty || extensionUpdates.isNotEmpty;
+  bool get hasUpdates => runtimeUpdates.isNotEmpty || extensionUpdates.isNotEmpty;
 
   int get totalUpdateCount => runtimeUpdates.length + extensionUpdates.length;
 }
