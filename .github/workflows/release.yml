@@ -1,0 +1,151 @@
+
+name: Build and Release Roxum IDE
+
+on:
+  push:
+    tags:
+      - '[0-9]*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Android Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+            lfs: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Configure Android
+        shell: bash
+        run: |
+          FLUTTER_BIN="$(readlink -f "$(command -v flutter)")"
+          FLUTTER_ROOT="$(dirname "$(dirname "$FLUTTER_BIN")")"
+          SDK_DIR="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+
+          VERSION="$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          content = Path("pubspec.yaml").read_text()
+          match = re.search(
+              r"(?m)^version:\s*[\"']?([^\"'\s#]+)",
+              content
+          )
+
+          if not match:
+              raise SystemExit("Could not find version in pubspec.yaml")
+
+          print(match.group(1))
+          PY
+          )"
+
+          VERSION_NAME="${VERSION%%+*}"
+
+          if [[ "$VERSION" == *"+"* ]]; then
+            VERSION_CODE="${VERSION##*+}"
+          else
+            VERSION_CODE=1
+          fi
+
+          mkdir -p android
+
+          cat > android/local.properties <<EOF
+          sdk.dir=$SDK_DIR
+          flutter.sdk=$FLUTTER_ROOT
+          flutter.buildMode=release
+          flutter.versionName=$VERSION_NAME
+          flutter.versionCode=$VERSION_CODE
+          EOF
+
+          echo "Flutter SDK: $FLUTTER_ROOT"
+          echo "Android SDK: $SDK_DIR"
+          echo "Version: $VERSION_NAME ($VERSION_CODE)"
+
+      - name: Flutter Pub Get
+        run: flutter pub get
+
+      - name: Build Release AAB
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew :app:bundleRelease
+
+      - name: Sign AAB
+        id: sign_aab
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: build/app/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Download Bundletool
+        run: |
+          URL=$(curl -fsSL \
+            https://api.github.com/repos/google/bundletool/releases/latest \
+            | jq -r '.assets[] |
+              select(.name | test("^bundletool-all-.*\\.jar$")) |
+              .browser_download_url' | head -n 1)
+
+          test -n "$URL"
+          test "$URL" != "null"
+
+          curl -fL "$URL" -o bundletool.jar
+
+      - name: Build Universal APK
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          KEY_STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ALIAS }}
+          SIGNED_AAB: ${{ steps.sign_aab.outputs.signedReleaseFile }}
+        run: |
+          set -e
+          echo "$SIGNING_KEY" | base64 -d > "$RUNNER_TEMP/release.jks"
+          printf '%s' "$KEY_STORE_PASSWORD" > "$RUNNER_TEMP/ks-pass"
+          printf '%s' "$KEY_PASSWORD" > "$RUNNER_TEMP/key-pass"
+          test -f "$SIGNED_AAB"
+          java -jar bundletool.jar build-apks \
+            --bundle="$SIGNED_AAB" \
+            --output=output.apks \
+            --mode=universal \
+            --ks="$RUNNER_TEMP/release.jks" \
+            --ks-pass=file:"$RUNNER_TEMP/ks-pass" \
+            --ks-key-alias="$KEY_ALIAS" \
+            --key-pass=file:"$RUNNER_TEMP/key-pass" \
+            --overwrite
+
+          unzip -p output.apks universal.apk > roxum-full.apk
+          test -s roxum-full.apk
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -n 1)/apksigner"
+          "$APKSIGNER" verify --verbose roxum-full.apk
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+            tag_name: ${{ github.ref_name }}
+            name: Roxum v${{ github.ref_name }}
+            body: ""
+            generate_release_notes: false
+            draft: false
+            files: |
+                ${{ steps.sign_aab.outputs.signedReleaseFile }}
+                roxum-full.apk
