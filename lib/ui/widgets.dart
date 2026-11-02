@@ -52,6 +52,20 @@ String _extractGitFilename(String gitStatusLine) {
   return fileName;
 }
 
+(String, Color) _gitIndicator(String line, {required bool staged}) {
+  final status = line.substring(0, 2);
+  if (!staged) {
+    return gitFileStatus[status[1] == '?' ? '??' : status[1]] ??
+        (('M', const Color(0xffaf9672)));
+  }
+
+  final stagedStatus = status[0] == 'A' ? 'A' : status[0];
+  if (stagedStatus == 'M') {
+    return ('A', const Color(0xffaf9672));
+  }
+  return gitFileStatus[stagedStatus] ?? ('A', Colors.green[700]!);
+}
+
 void _refreshRepoStatusForFile(BuildContext context, File file) {
   try {
     final root = _findRepoRoot(file);
@@ -578,7 +592,9 @@ class _CodeEditorState extends State<CodeEditor> with AutomaticKeepAliveClientMi
                   final primaryMode = widget.language.language;
 
                   return CodeForge(
-                    tabSize: 2,
+                    enableMinimap: false,
+                    tabSize: (configState.codeForgeConfig['tabSize'] ?? 2) as int,
+                    useSpaceAsTab: (configState.codeForgeConfig['useSpaceAsTab'] ?? false) as bool,
                     key: ValueKey('${widget.filePath.path}:${widget.language.name}'),
                     horizontalScrollController: null,
                     verticalScrollController: null,
@@ -4131,7 +4147,7 @@ class _SourceControlState extends State<SourceControl> {
     if (widget.isRepoThere) {
       final currentState = context.read<RepoStatusBloc>().state;
       if (currentState is RepoStatusInitial) {
-        context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+        context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
       }
       _setupGitWatcher();
     }
@@ -4148,7 +4164,7 @@ class _SourceControlState extends State<SourceControl> {
           if (_lastGitRefresh == null ||
               now.difference(_lastGitRefresh!).inSeconds >= 2) {
             _lastGitRefresh = now;
-            context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+            context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
           }
         }
       });
@@ -4505,7 +4521,7 @@ $diffText
   void didUpdateWidget(covariant SourceControl oldWidget) {
     if (oldWidget.workSpace != widget.workSpace) {
       try {
-        context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+        context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
         if (widget.isRepoThere) {
           context.read<RepoStatusBloc>().add(LoadCommitGraph(widget.workSpace));
           _setupGitWatcher();
@@ -4735,7 +4751,7 @@ $diffText
         Navigator.of(context).pop();
         if (result.exitCode == 0) {
           _showSuccessSnackBar(context, 'Push successful');
-          context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+          context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
         } else {
           _showErrorSnackBar(context, 'Push failed: ${result.stderr}');
         }
@@ -4756,7 +4772,7 @@ $diffText
         Navigator.of(context).pop();
         if (result.exitCode == 0) {
           _showSuccessSnackBar(context, 'Pull successful');
-          context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+          context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
           context.read<RepoStatusBloc>().add(LoadCommitGraph(widget.workSpace));
         } else {
           final out = '${result.stdout}'.trim();
@@ -4778,7 +4794,7 @@ $diffText
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+                      context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
                       context.read<RepoStatusBloc>().add(LoadCommitGraph(widget.workSpace));
                     },
                     child: const Text('OK'),
@@ -8497,7 +8513,7 @@ $diffText
                                               );
                                               try {
                                                 if (context.mounted) {
-                                                  context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+                                                  context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
                                                 }
                                               } catch (_) {}
                                             },
@@ -8511,13 +8527,8 @@ $diffText
                                         ),
                                         controller: _stagedScrollController,
                                         itemBuilder: (_, index) {
-                                          final fileName =
-                                              _extractGitFilename(
-                                                repoState.staged[index],
-                                              );
-                                          final (String, Color)
-                                          repoIndicator =
-                                              gitFileStatus[repoState.staged[index].substring(0, 2).trim()]!;
+                                          final fileName =_extractGitFilename(repoState.staged[index]);
+                                          final repoIndicator = _gitIndicator(repoState.staged[index], staged: true);
                                           return Padding(
                                             padding:
                                               const EdgeInsets.symmetric(
@@ -8630,7 +8641,7 @@ $diffText
                                                             await unstageChange(fileName,widget.workSpace);
                                                             if (context.mounted) {
                                                               try {
-                                                                context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+                                                                context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
                                                               } catch (_) {}
                                                             }
                                                           },
@@ -8670,7 +8681,7 @@ $diffText
                                               );
                                               if (context.mounted) {
                                                 try {
-                                                  context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+                                                  context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
                                                 } catch (_) {}
                                               }
                                             },
@@ -8683,8 +8694,7 @@ $diffText
                                         controller: _unstagedScrollController,
                                         itemBuilder: (_, index) {
                                           final fileName =_extractGitFilename(repoState.unstaged[index]);
-                                          final (String, Color)
-                                          repoIndicator = gitFileStatus[repoState.unstaged[index].substring(0, 2).trim()]!;
+                                          final repoIndicator = _gitIndicator(repoState.unstaged[index], staged: false);
                                           return Padding(
                                             padding: const EdgeInsets.symmetric(horizontal: 8,vertical: 3),
                                             child: Material(
@@ -8883,7 +8893,7 @@ $diffText
                                                             await stageChange(fileName, widget.workSpace);
                                                             if (context.mounted) {
                                                               try {
-                                                                context.read<RepoStatusBloc>().add(LoadRepoStatus(widget.workSpace));
+                                                                context.read<RepoStatusBloc>().add(RefreshGitFileStatus(widget.workSpace));
                                                               } catch (_) {}
                                                             }
                                                           },
@@ -10452,6 +10462,7 @@ class _AIChatState extends State<AIChat> with SingleTickerProviderStateMixin {
           ),
         );
       }
+
       markdownBuffer.clear();
     }
 
@@ -12177,7 +12188,9 @@ class _AIChatState extends State<AIChat> with SingleTickerProviderStateMixin {
                                           Expanded(
                                             child: BlocBuilder<ConfigBloc, ConfigState>(
                                               builder: (context, configState) {
-                                                final theme = getMergedHighlightThemes(configState.codeForgeConfig)[configState.codeForgeConfig['theme']] ?? atomOneDarkTheme;
+                                                final theme = getMergedHighlightThemes(
+                                                  configState.codeForgeConfig
+                                                )[configState.codeForgeConfig['theme']] ?? atomOneDarkTheme;
                                                 
                                                 if (!_initialScrollDone && conversations.isNotEmpty) {
                                                   _initialScrollDone = true;

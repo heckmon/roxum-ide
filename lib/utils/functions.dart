@@ -1648,6 +1648,8 @@ Future<String> getCodeForgeConfig() async {
     "indentLineStatus": true,
     "lineWrap": false,
     "enableFolding": true,
+    "useSpaceAsTab": false,
+    "tabSize": 2,
     "theme": "vs2015",
     "terminalTheme": "classic-green",
     "fontFamily": "jetBrainsMono",
@@ -2671,7 +2673,7 @@ Map<String, (String, Color)> gitFileStatus = {
   "D": ('D', Colors.red[300]!),
   "UU": ('C', Colors.red[300]!),
   "??": ('U', Colors.green[700]!),
-  "A": ('U', Colors.green[700]!),
+  "A": ('A', Colors.green[700]!),
 };
 
 class EditHunk {

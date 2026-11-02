@@ -7,7 +7,7 @@ import 'package:flutter_pty/flutter_pty.dart';
 import 'package:roxum/l10n/app_localizations.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:xterm/xterm.dart';
+import 'package:xterm2/xterm.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -284,10 +284,10 @@ class _SetupTerminalState extends State<SetupTerminal> {
   OverlayEntry? _selectionToolbarOverlay;
   bool _hasSelection = false;
 
-  final ValueNotifier<List<String>?> _suggestionsNotifier = ValueNotifier(null);
+  // final ValueNotifier<List<String>?> _suggestionsNotifier = ValueNotifier(null);
   final ScrollController _suggestionScrollController = ScrollController();
-  int _selectedSuggestionIndex = 0;
-  List<String> _pathBinaries = [];
+  // int _selectedSuggestionIndex = 0;
+  // List<String> _pathBinaries = [];
 
   @override
   void initState() {
@@ -440,9 +440,9 @@ class _SetupTerminalState extends State<SetupTerminal> {
       runtime.terminal.onOutput = (data) {
         if (widget.readOnly) return;
         process.write(const Utf8Encoder().convert(data));
-        if (_sessionBloc.state.activeSessionId == id) {
-          _handleInputForAutocomplete(runtime, data);
-        }
+        // if (_sessionBloc.state.activeSessionId == id) {
+        //   _handleInputForAutocomplete(runtime, data);
+        // }
       };
       runtime.terminal.onResize = (w, h, pw, ph) => process.resize(h, w);
     } else if (runtime.sshSession != null) {
@@ -459,9 +459,9 @@ class _SetupTerminalState extends State<SetupTerminal> {
     final runtime = TerminalRuntimeRegistry.instance.get(sessionId)!;
     runtime.stopProcess();
     runtime.currentInput = '';
-    if (_sessionBloc.state.activeSessionId == sessionId) {
-      _suggestionsNotifier.value = null;
-    }
+    // if (_sessionBloc.state.activeSessionId == sessionId) {
+    //   _suggestionsNotifier.value = null;
+    // }
     await _startPty(runtime);
   }
 
@@ -485,7 +485,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
       await runtime?.dispose();
       _sessionBloc.add(DeleteTerminalSession(sessionId));
       _hideSelectionToolbar();
-      _suggestionsNotifier.value = null;
+      // _suggestionsNotifier.value = null;
       _hasSelection = false;
 
       if (mounted) {
@@ -501,7 +501,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
 
     if (_sessionBloc.state.activeSessionId == sessionId) {
       _hideSelectionToolbar();
-      _suggestionsNotifier.value = null;
+      // _suggestionsNotifier.value = null;
       _hasSelection = false;
     }
   }
@@ -530,7 +530,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
         }
       } catch (_) {}
     }
-    _pathBinaries = binaries.toList()..sort();
+    // _pathBinaries = binaries.toList()..sort();
   }
 
   Future<void> _ensureBashRc() async {
@@ -693,7 +693,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
       final activeSessionId = _sessionBloc.state.activeSessionId;
       process.write(const Utf8Encoder().convert(data));
       if (activeSessionId == runtime.sessionId) {
-        _handleInputForAutocomplete(runtime, data);
+        // _handleInputForAutocomplete(runtime, data);
       }
     };
 
@@ -702,138 +702,138 @@ class _SetupTerminalState extends State<SetupTerminal> {
     };
 
     if (widget.readOnly) {
-      _suggestionsNotifier.value = null;
+      // _suggestionsNotifier.value = null;
       _hideSelectionToolbar();
       runtime.controller.clearSelection();
     }
   }
 
-  void _handleInputForAutocomplete(TerminalRuntime runtime, String data) {
-    if (data == '\r' || data == '\n') {
-      _suggestionsNotifier.value = null;
-      runtime.currentInput = '';
-      return;
-    }
+  // void _handleInputForAutocomplete(TerminalRuntime runtime, String data) {
+  //   if (data == '\r' || data == '\n') {
+  //     _suggestionsNotifier.value = null;
+  //     runtime.currentInput = '';
+  //     return;
+  //   }
 
-    if (data == '\x7f' || data == '\b') {
-      if (runtime.currentInput.isNotEmpty) {
-        runtime.currentInput = runtime.currentInput.substring(
-          0,
-          runtime.currentInput.length - 1,
-        );
-      }
-    } else if (data == '\t') {
-      final suggestions = _suggestionsNotifier.value;
-      if (suggestions != null && suggestions.isNotEmpty) {
-        _acceptSuggestion(runtime, suggestions[_selectedSuggestionIndex]);
-      }
-      return;
-    } else if (data == ' ' || data.contains('\x1b')) {
-      _suggestionsNotifier.value = null;
-      runtime.currentInput = '';
-      return;
-    } else if (data.length == 1 && data.codeUnitAt(0) >= 32) {
-      runtime.currentInput += data;
-    } else {
-      return;
-    }
+  //   if (data == '\x7f' || data == '\b') {
+  //     if (runtime.currentInput.isNotEmpty) {
+  //       runtime.currentInput = runtime.currentInput.substring(
+  //         0,
+  //         runtime.currentInput.length - 1,
+  //       );
+  //     }
+  //   } else if (data == '\t') {
+  //     final suggestions = _suggestionsNotifier.value;
+  //     if (suggestions != null && suggestions.isNotEmpty) {
+  //       _acceptSuggestion(runtime, suggestions[_selectedSuggestionIndex]);
+  //     }
+  //     return;
+  //   } else if (data == ' ' || data.contains('\x1b')) {
+  //     _suggestionsNotifier.value = null;
+  //     runtime.currentInput = '';
+  //     return;
+  //   } else if (data.length == 1 && data.codeUnitAt(0) >= 32) {
+  //     runtime.currentInput += data;
+  //   } else {
+  //     return;
+  //   }
 
-    _updateSuggestions(runtime);
-  }
+  //   _updateSuggestions(runtime);
+  // }
 
-  Future<void> _updateSuggestions(TerminalRuntime runtime) async {
-    if (runtime.currentInput.isEmpty) {
-      _suggestionsNotifier.value = null;
-      return;
-    }
+  // Future<void> _updateSuggestions(TerminalRuntime runtime) async {
+  //   if (runtime.currentInput.isEmpty) {
+  //     _suggestionsNotifier.value = null;
+  //     return;
+  //   }
 
-    final query = runtime.currentInput.toLowerCase();
-    List<String> matches = [];
+  //   final query = runtime.currentInput.toLowerCase();
+  //   List<String> matches = [];
 
-    if (runtime.currentInput.startsWith('./') ||
-        runtime.currentInput.startsWith('/') ||
-        runtime.currentInput.startsWith('~/') ||
-        runtime.currentInput.contains('/')) {
-      matches = await _getPathSuggestions(runtime.currentInput);
-    } else {
-      matches = _pathBinaries
-          .where((bin) => bin.toLowerCase().startsWith(query))
-          .take(10)
-          .toList();
-    }
+  //   if (runtime.currentInput.startsWith('./') ||
+  //       runtime.currentInput.startsWith('/') ||
+  //       runtime.currentInput.startsWith('~/') ||
+  //       runtime.currentInput.contains('/')) {
+  //     matches = await _getPathSuggestions(runtime.currentInput);
+  //   } else {
+  //     matches = _pathBinaries
+  //         .where((bin) => bin.toLowerCase().startsWith(query))
+  //         .take(10)
+  //         .toList();
+  //   }
 
-    if (matches.isEmpty) {
-      _suggestionsNotifier.value = null;
-    } else {
-      _selectedSuggestionIndex = 0;
-      _suggestionsNotifier.value = matches;
-    }
-  }
+  //   if (matches.isEmpty) {
+  //     _suggestionsNotifier.value = null;
+  //   } else {
+  //     _selectedSuggestionIndex = 0;
+  //     _suggestionsNotifier.value = matches;
+  //   }
+  // }
 
-  Future<List<String>> _getPathSuggestions(String input) async {
-    try {
-      String searchPath;
-      String prefix = '';
+  // Future<List<String>> _getPathSuggestions(String input) async {
+  //   try {
+  //     String searchPath;
+  //     String prefix = '';
 
-      if (input.startsWith('~/')) {
-        searchPath = homeDir + input.substring(1);
-        prefix = '~/';
-      } else if (input.startsWith('./')) {
-        searchPath = '${widget.projectDir}/${input.substring(2)}';
-        prefix = './';
-      } else if (input.startsWith('/')) {
-        searchPath = input;
-        prefix = '';
-      } else {
-        searchPath = '${widget.projectDir}/$input';
-        prefix = '';
-      }
+  //     if (input.startsWith('~/')) {
+  //       searchPath = homeDir + input.substring(1);
+  //       prefix = '~/';
+  //     } else if (input.startsWith('./')) {
+  //       searchPath = '${widget.projectDir}/${input.substring(2)}';
+  //       prefix = './';
+  //     } else if (input.startsWith('/')) {
+  //       searchPath = input;
+  //       prefix = '';
+  //     } else {
+  //       searchPath = '${widget.projectDir}/$input';
+  //       prefix = '';
+  //     }
 
-      final lastSlash = searchPath.lastIndexOf('/');
-      final dirPath = lastSlash >= 0
-          ? searchPath.substring(0, lastSlash + 1)
-          : searchPath;
-      final partial = lastSlash >= 0
-          ? searchPath.substring(lastSlash + 1).toLowerCase()
-          : '';
+  //     final lastSlash = searchPath.lastIndexOf('/');
+  //     final dirPath = lastSlash >= 0
+  //         ? searchPath.substring(0, lastSlash + 1)
+  //         : searchPath;
+  //     final partial = lastSlash >= 0
+  //         ? searchPath.substring(lastSlash + 1).toLowerCase()
+  //         : '';
 
-      final dir = Directory(dirPath);
-      if (!await dir.exists()) return [];
+  //     final dir = Directory(dirPath);
+  //     if (!await dir.exists()) return [];
 
-      final suggestions = <String>[];
-      await for (final entity in dir.list()) {
-        final name = entity.path.split('/').last;
-        if (partial.isEmpty || name.toLowerCase().startsWith(partial)) {
-          final isDir = entity is Directory;
-          final displayPath = prefix.isEmpty
-              ? entity.path
-              : prefix +
-                    entity.path.substring(
-                      input.startsWith('~/')
-                          ? homeDir.length
-                          : input.startsWith('./')
-                          ? widget.projectDir.length + 1
-                          : 0,
-                    );
-          suggestions.add(isDir ? '$displayPath/' : displayPath);
-        }
-      }
+  //     final suggestions = <String>[];
+  //     await for (final entity in dir.list()) {
+  //       final name = entity.path.split('/').last;
+  //       if (partial.isEmpty || name.toLowerCase().startsWith(partial)) {
+  //         final isDir = entity is Directory;
+  //         final displayPath = prefix.isEmpty
+  //             ? entity.path
+  //             : prefix +
+  //                   entity.path.substring(
+  //                     input.startsWith('~/')
+  //                         ? homeDir.length
+  //                         : input.startsWith('./')
+  //                         ? widget.projectDir.length + 1
+  //                         : 0,
+  //                   );
+  //         suggestions.add(isDir ? '$displayPath/' : displayPath);
+  //       }
+  //     }
 
-      suggestions.sort();
-      return suggestions.take(10).toList();
-    } catch (_) {
-      return [];
-    }
-  }
+  //     suggestions.sort();
+  //     return suggestions.take(10).toList();
+  //   } catch (_) {
+  //     return [];
+  //   }
+  // }
 
-  void _acceptSuggestion(TerminalRuntime runtime, String suggestion) {
-    final process = runtime.pty;
-    if (process == null) return;
-    final toSend = suggestion.substring(runtime.currentInput.length);
-    process.write(const Utf8Encoder().convert(toSend));
-    runtime.currentInput = suggestion;
-    _suggestionsNotifier.value = null;
-  }
+  // void _acceptSuggestion(TerminalRuntime runtime, String suggestion) {
+  //   final process = runtime.pty;
+  //   if (process == null) return;
+  //   final toSend = suggestion.substring(runtime.currentInput.length);
+  //   process.write(const Utf8Encoder().convert(toSend));
+  //   runtime.currentInput = suggestion;
+  //   _suggestionsNotifier.value = null;
+  // }
 
   void _showSelectionToolbar() {
     _hideSelectionToolbar();
@@ -1032,7 +1032,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
 
       if (sequence.isNotEmpty) {
         process.write(const Utf8Encoder().convert(sequence));
-        _handleInputForAutocomplete(runtime, sequence);
+        // _handleInputForAutocomplete(runtime, sequence);
       }
 
       if ((ctrl || alt || shift) && resetCallback != null) {
@@ -1045,184 +1045,184 @@ class _SetupTerminalState extends State<SetupTerminal> {
   @override
   void dispose() {
     _hideSelectionToolbar();
-    _suggestionsNotifier.dispose();
+    // _suggestionsNotifier.dispose();
     _suggestionScrollController.dispose();
     super.dispose();
   }
 
-  Widget _buildSuggestionBox() {
-    if (widget.readOnly) {
-      return const SizedBox.shrink();
-    }
+  // Widget _buildSuggestionBox() {
+  //   if (widget.readOnly) {
+  //     return const SizedBox.shrink();
+  //   }
 
-    return ValueListenableBuilder<List<String>?>(
-      valueListenable: _suggestionsNotifier,
-      builder: (context, suggestions, _) {
-        if (suggestions == null || suggestions.isEmpty) {
-          _selectedSuggestionIndex = 0;
-          return const SizedBox.shrink();
-        }
+  //   return ValueListenableBuilder<List<String>?>(
+  //     valueListenable: _suggestionsNotifier,
+  //     builder: (context, suggestions, _) {
+  //       if (suggestions == null || suggestions.isEmpty) {
+  //         _selectedSuggestionIndex = 0;
+  //         return const SizedBox.shrink();
+  //       }
 
-        final screenWidth = MediaQuery.of(context).size.width;
-        const itemHeight = 40.0;
-        final maxHeight = (suggestions.length * itemHeight).clamp(0.0, 300.0);
+  //       final screenWidth = MediaQuery.of(context).size.width;
+  //       const itemHeight = 40.0;
+  //       final maxHeight = (suggestions.length * itemHeight).clamp(0.0, 300.0);
 
-        return Positioned(
-          left: 8,
-          right: 8,
-          bottom: 100,
-          child: Material(
-            elevation: 8,
-            borderRadius: BorderRadius.circular(8),
-            color: const Color(0xff252526),
-            child: Container(
-              constraints: BoxConstraints(
-                maxHeight: maxHeight,
-                maxWidth: screenWidth - 16,
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xff3c3c3c), width: 0.5),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: RawScrollbar(
-                  thumbVisibility: true,
-                  thumbColor: Colors.white.withValues(alpha: 0.3),
-                  controller: _suggestionScrollController,
-                  child: ListView.builder(
-                    controller: _suggestionScrollController,
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemExtent: itemHeight,
-                    itemCount: suggestions.length,
-                    itemBuilder: (context, index) {
-                      final suggestion = suggestions[index];
-                      final isSelected = index == _selectedSuggestionIndex;
-                      final isDirectory = suggestion.endsWith('/');
-                      final isPath = suggestion.contains('/');
-                      final activeRuntime = _activeRuntime();
+  //       return Positioned(
+  //         left: 8,
+  //         right: 8,
+  //         bottom: 100,
+  //         child: Material(
+  //           elevation: 8,
+  //           borderRadius: BorderRadius.circular(8),
+  //           color: const Color(0xff252526),
+  //           child: Container(
+  //             constraints: BoxConstraints(
+  //               maxHeight: maxHeight,
+  //               maxWidth: screenWidth - 16,
+  //             ),
+  //             decoration: BoxDecoration(
+  //               borderRadius: BorderRadius.circular(8),
+  //               border: Border.all(color: const Color(0xff3c3c3c), width: 0.5),
+  //             ),
+  //             child: ClipRRect(
+  //               borderRadius: BorderRadius.circular(8),
+  //               child: RawScrollbar(
+  //                 thumbVisibility: true,
+  //                 thumbColor: Colors.white.withValues(alpha: 0.3),
+  //                 controller: _suggestionScrollController,
+  //                 child: ListView.builder(
+  //                   controller: _suggestionScrollController,
+  //                   shrinkWrap: true,
+  //                   padding: EdgeInsets.zero,
+  //                   itemExtent: itemHeight,
+  //                   itemCount: suggestions.length,
+  //                   itemBuilder: (context, index) {
+  //                     final suggestion = suggestions[index];
+  //                     final isSelected = index == _selectedSuggestionIndex;
+  //                     final isDirectory = suggestion.endsWith('/');
+  //                     final isPath = suggestion.contains('/');
+  //                     final activeRuntime = _activeRuntime();
 
-                      return InkWell(
-                        onTap: activeRuntime == null
-                            ? null
-                            : () =>
-                                  _acceptSuggestion(activeRuntime, suggestion),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          color: isSelected
-                              ? const Color(0xff094771)
-                              : Colors.transparent,
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: isDirectory
-                                      ? Colors.amber.withValues(alpha: 0.15)
-                                      : isPath
-                                      ? Colors.blue.withValues(alpha: 0.15)
-                                      : Colors.green.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Icon(
-                                  isDirectory
-                                      ? Icons.folder_rounded
-                                      : isPath
-                                      ? Icons.insert_drive_file_rounded
-                                      : Icons.terminal_rounded,
-                                  size: 16,
-                                  color: isDirectory
-                                      ? Colors.amber
-                                      : isPath
-                                      ? Colors.blue.shade300
-                                      : Colors.green.shade300,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  suggestion,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontSize: 14,
-                                    fontFamily: 'monospace',
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (!isPath)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    'cmd',
-                                    style: TextStyle(
-                                      color: Colors.green.shade300,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              if (isDirectory)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    'dir',
-                                    style: TextStyle(
-                                      color: Colors.amber.shade300,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                              if (isPath && !isDirectory)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    'file',
-                                    style: TextStyle(
-                                      color: Colors.blue.shade300,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  //                     return InkWell(
+  //                       onTap: activeRuntime == null
+  //                           ? null
+  //                           : () =>
+  //                                 _acceptSuggestion(activeRuntime, suggestion),
+  //                       child: Container(
+  //                         padding: const EdgeInsets.symmetric(horizontal: 12),
+  //                         color: isSelected
+  //                             ? const Color(0xff094771)
+  //                             : Colors.transparent,
+  //                         child: Row(
+  //                           children: [
+  //                             Container(
+  //                               width: 24,
+  //                               height: 24,
+  //                               decoration: BoxDecoration(
+  //                                 color: isDirectory
+  //                                     ? Colors.amber.withValues(alpha: 0.15)
+  //                                     : isPath
+  //                                     ? Colors.blue.withValues(alpha: 0.15)
+  //                                     : Colors.green.withValues(alpha: 0.15),
+  //                                 borderRadius: BorderRadius.circular(4),
+  //                               ),
+  //                               child: Icon(
+  //                                 isDirectory
+  //                                     ? Icons.folder_rounded
+  //                                     : isPath
+  //                                     ? Icons.insert_drive_file_rounded
+  //                                     : Icons.terminal_rounded,
+  //                                 size: 16,
+  //                                 color: isDirectory
+  //                                     ? Colors.amber
+  //                                     : isPath
+  //                                     ? Colors.blue.shade300
+  //                                     : Colors.green.shade300,
+  //                               ),
+  //                             ),
+  //                             const SizedBox(width: 10),
+  //                             Expanded(
+  //                               child: Text(
+  //                                 suggestion,
+  //                                 style: TextStyle(
+  //                                   color: Colors.white.withValues(alpha: 0.9),
+  //                                   fontSize: 14,
+  //                                   fontFamily: 'monospace',
+  //                                 ),
+  //                                 overflow: TextOverflow.ellipsis,
+  //                               ),
+  //                             ),
+  //                             if (!isPath)
+  //                               Container(
+  //                                 padding: const EdgeInsets.symmetric(
+  //                                   horizontal: 6,
+  //                                   vertical: 2,
+  //                                 ),
+  //                                 decoration: BoxDecoration(
+  //                                   color: Colors.green.withValues(alpha: 0.15),
+  //                                   borderRadius: BorderRadius.circular(4),
+  //                                 ),
+  //                                 child: Text(
+  //                                   'cmd',
+  //                                   style: TextStyle(
+  //                                     color: Colors.green.shade300,
+  //                                     fontSize: 10,
+  //                                     fontWeight: FontWeight.w500,
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                             if (isDirectory)
+  //                               Container(
+  //                                 padding: const EdgeInsets.symmetric(
+  //                                   horizontal: 6,
+  //                                   vertical: 2,
+  //                                 ),
+  //                                 decoration: BoxDecoration(
+  //                                   color: Colors.amber.withValues(alpha: 0.15),
+  //                                   borderRadius: BorderRadius.circular(4),
+  //                                 ),
+  //                                 child: Text(
+  //                                   'dir',
+  //                                   style: TextStyle(
+  //                                     color: Colors.amber.shade300,
+  //                                     fontSize: 10,
+  //                                     fontWeight: FontWeight.w500,
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                             if (isPath && !isDirectory)
+  //                               Container(
+  //                                 padding: const EdgeInsets.symmetric(
+  //                                   horizontal: 6,
+  //                                   vertical: 2,
+  //                                 ),
+  //                                 decoration: BoxDecoration(
+  //                                   color: Colors.blue.withValues(alpha: 0.15),
+  //                                   borderRadius: BorderRadius.circular(4),
+  //                                 ),
+  //                                 child: Text(
+  //                                   'file',
+  //                                   style: TextStyle(
+  //                                     color: Colors.blue.shade300,
+  //                                     fontSize: 10,
+  //                                     fontWeight: FontWeight.w500,
+  //                                   ),
+  //                                 ),
+  //                               ),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                     );
+  //                   },
+  //                 ),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _buildSessionDrawer(TerminalSessionState state, AppTheme appTheme) {
     return Drawer(
@@ -1355,7 +1355,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
       listenWhen: (previous, current) => previous.activeSessionId != current.activeSessionId,
       listener: (context, state) {
         _hideSelectionToolbar();
-        _suggestionsNotifier.value = null;
+        // _suggestionsNotifier.value = null;
         _hasSelection = false;
       },
       child: BlocBuilder<TerminalSessionBloc, TerminalSessionState>(
@@ -1401,7 +1401,7 @@ class _SetupTerminalState extends State<SetupTerminal> {
                           ),
                       ],
                     ),
-                    _buildSuggestionBox(),
+                    // _buildSuggestionBox(),
                   ],
                 );
 

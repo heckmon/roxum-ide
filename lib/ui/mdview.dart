@@ -29,6 +29,7 @@ class MdView extends StatelessWidget {
     return SafeArea(
       child: Scaffold(
         body: MarkdownWidget(
+          padding: .all(10),
           data: data,
           config: config.copy(configs: [
             PreConfig(

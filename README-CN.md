@@ -27,14 +27,6 @@ Roxum IDE 是一款专为移动设备设计的 Android 代码编辑器和轻量�
 - **支持 SSH，可连接远程系统。**
 - **支持集成外部 AI 服务提供商，实现基于智能代理的代码编辑。**
 
-## 2.8.0 版本更新
-
-- 修复：[ #56](https://github.com/heckmon/roxum-ide/issues/56)
-- 修复：[ #53](https://github.com/heckmon/roxum-ide/issues/53)
-- 修复：[ #52](https://github.com/heckmon/roxum-ide/issues/52)
-- 修复：Zig 编译器错误。
-- 改进：优化编辑器后端。
-
 ---
 
 ### 应用截图

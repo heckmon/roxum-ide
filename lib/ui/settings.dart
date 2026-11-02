@@ -13,7 +13,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:re_highlight/styles/vs2015.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:xterm/xterm.dart';
+import 'package:xterm2/xterm.dart';
 import '../utils/constants.dart';
 import '../bloc/ui_bloc/ui_bloc.dart';
 import '../utils/functions.dart';
@@ -42,6 +42,7 @@ class _SettingsState extends State<Settings> {
   final _ggufKey = GlobalKey<FormState>(), _themeKey = GlobalKey<FormState>();
   bool? _isGeneratedKey;
   int sshStackIndex = 0;
+  String? _remoteSettingsPage;
   static const String _defaultEditorThemeName = 'vs2015';
   final List<Map<String, dynamic>> _ggufModels = [
     {
@@ -2326,6 +2327,8 @@ int main() {
         final isIndentEnabled = configState.codeForgeConfig['indentLineStatus'];
         final lineWrap = configState.codeForgeConfig['lineWrap'];
         final enableFolding = configState.codeForgeConfig['enableFolding'];
+        final useSpaceAsTab = configState.codeForgeConfig['useSpaceAsTab'] ?? false;
+        final tabSize = configState.codeForgeConfig['tabSize'] ?? 2;
         final terminalThemeId = (configState.codeForgeConfig['terminalTheme'] ?? defaultTerminalThemeId).toString();
         final selectedTerminalThemePreset = terminalThemePresetById(terminalThemeId);
         return BlocBuilder<AppThemeBloc, AppThemeState>(
@@ -3030,6 +3033,90 @@ int main() {
                       ),
                       settingsTile(
                         null,
+                        "Use spaces for tabs",
+                        Icon(
+                          Icons.space_bar,
+                          color: appThemeState.appTheme.selectScreenCardTextColor,
+                          size: 19,
+                        ),
+                        appThemeState.appTheme.isDark,
+                        trailing: FlutterSwitch(
+                          borderRadius: 5,
+                          width: 65,
+                          height: 26,
+                          toggleSize: 32,
+                          toggleColor: Color(0xff007ACC),
+                          inactiveToggleColor: Colors.white,
+                          activeColor: appThemeState.appTheme.isDark ? Color(0xff303030) : Color(0xffb0c6fe),
+                          activeIcon: Text("On", style: TextStyle(color: Colors.white)),
+                          inactiveIcon: Text("Off", style: TextStyle(color: Colors.grey)),
+                          toggleShape: BoxShape.rectangle,
+                          toggleBorderRadius: .circular(4),
+                          padding: 2,
+                          value: useSpaceAsTab,
+                          onToggle: (value) async {
+                            final prefs = await SharedPreferences.getInstance();
+                            final currentState = Map<String, dynamic>.from(configState.codeForgeConfig)
+                              ..['useSpaceAsTab'] = value;
+                            await prefs.setString("codeForgeConfig", jsonEncode(currentState));
+                            if (context.mounted) {
+                              context.read<ConfigBloc>().add(ChangeConfigEvent(currentState));
+                            }
+                          },
+                        ),
+                      ),
+                      settingsTile(
+                        () async {
+                          final controller = TextEditingController(text: '$tabSize');
+                          final selectedSize = await showDialog<int>(
+                            context: context,
+                            builder: (dialogContext) => AlertDialog(
+                              title: const Text('Tab size'),
+                              content: TextField(
+                                controller: controller,
+                                autofocus: true,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                                decoration: const InputDecoration(labelText: 'Spaces per tab'),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(dialogContext),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    final value = int.tryParse(controller.text);
+                                    if (value != null && value > 0 && value <= 16) {
+                                      Navigator.pop(dialogContext, value);
+                                    }
+                                  },
+                                  child: const Text('Save'),
+                                ),
+                              ],
+                            ),
+                          );
+                          controller.dispose();
+                          if (selectedSize == null || !context.mounted) return;
+                          final currentState = Map<String, dynamic>.from(configState.codeForgeConfig)
+                            ..['tabSize'] = selectedSize;
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString("codeForgeConfig", jsonEncode(currentState));
+                          if (context.mounted) {
+                            context.read<ConfigBloc>().add(ChangeConfigEvent(currentState));
+                          }
+                        },
+                        "Tab size",
+                        Icon(
+                          Icons.format_indent_increase,
+                          color: appThemeState.appTheme.selectScreenCardTextColor,
+                          size: 19,
+                        ),
+                        appThemeState.appTheme.isDark,
+                        subTitle: '$tabSize',
+                      ),
+                      settingsTile(
+                        null,
                         "Line Wrap",
                         Icon(
                           Icons.wrap_text,
@@ -3103,8 +3190,11 @@ int main() {
                               maxWidth: 365
                             ),
                             child: CodeForge(
+                              tabSize: tabSize,
+                              useSpaceAsTab: useSpaceAsTab,
                               lineWrap: lineWrap,
                               enableFolding: enableFolding,
+                              enableMinimap: false,
                               selectionStyle: CodeSelectionStyle(
                                 selectionColor: Colors.blueAccent.withAlpha(80),
                                 cursorBubbleColor: Color(0xff007acc),
@@ -3356,7 +3446,34 @@ int main() {
                       const SizedBox(height: 35),
                       settingsDivider,
                       const SizedBox(height: 20),
-                      settingsType("Remote host and Termux", appThemeState.appTheme.isDark),
+                      if (_remoteSettingsPage == null) ...[
+                        settingsType("Remote host and Termux", appThemeState.appTheme.isDark),
+                        settingsTile(
+                          () => setState(() => _remoteSettingsPage = 'remote'),
+                          "Remote host",
+                          Icon(Icons.dns, color: appThemeState.appTheme.selectScreenCardTextColor, size: 19),
+                          appThemeState.appTheme.isDark,
+                          subTitle: "Configure SSH connections",
+                        ),
+                        settingsTile(
+                          () => setState(() => _remoteSettingsPage = 'termux'),
+                          "Termux",
+                          SvgPicture.asset("assets/icons/Termux.svg", height: 22, width: 22),
+                          appThemeState.appTheme.isDark,
+                          subTitle: "Use Termux as a local SSH host",
+                        ),
+                      ] else ...[
+                        ListTile(
+                          leading: Icon(
+                            Icons.arrow_back,
+                            color: appThemeState.appTheme.selectScreenCardTextColor
+                          ),
+                          title: Text(
+                            _remoteSettingsPage == 'remote' ? "Remote host" : "Termux",
+                            style: TextStyle(color: appThemeState.appTheme.selectScreenCardTextColor),
+                          ),
+                          onTap: () => setState(() => _remoteSettingsPage = null),
+                        ),
                       BlocBuilder<SSHServersCubit, SSHServersState>(
                         builder: (context, sshState) {
                           final serverList = sshState.serverList;
@@ -3365,6 +3482,7 @@ int main() {
                             key: _sshFormKey,
                             child: Column(
                               children: [
+                                if (_remoteSettingsPage == 'remote') ...[
                                 Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 20),
                                   child: SizedBox(
@@ -4448,15 +4566,8 @@ int main() {
                                     ),
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
-                                  child: Divider(
-                                    color: appTheme.selectScreenCardTextColor,
-                                    thickness: 0.2,
-                                    indent: 65,
-                                    endIndent: 65,
-                                  ),
-                                ),
+                                ],
+                                if (_remoteSettingsPage == 'termux') ...[
                                 Padding(
                                   padding: const EdgeInsets.only(left: 15),
                                   child: ListTile(
@@ -4966,12 +5077,14 @@ int main() {
                                     );
                                   },
                                 ),
+                                ],
 
                               ],
                             ),
                           );
                         },
                       ),
+                      ],
 
                       const SizedBox(height: 35),
                       settingsDivider,

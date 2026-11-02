@@ -27,14 +27,6 @@ Combina edición de código, flujos de trabajo con terminal, herramientas para G
 - **Compatibilidad con SSH para conectarse a sistemas remotos.**
 - **Integración con proveedores externos de IA para la edición autónoma mediante agentes.**
 
-## Novedades de la versión 2.8.0
-
-- CORRECCIÓN: [#56](https://github.com/heckmon/roxum-ide/issues/56)
-- CORRECCIÓN: [#53](https://github.com/heckmon/roxum-ide/issues/53)
-- CORRECCIÓN: [#52](https://github.com/heckmon/roxum-ide/issues/52)
-- CORRECCIÓN: Error del compilador de Zig.
-- MEJORA: Backend del editor optimizado.
-
 ---
 
 ### Galería

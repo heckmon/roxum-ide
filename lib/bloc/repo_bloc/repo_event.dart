@@ -13,6 +13,13 @@ class LoadRepoStatus extends RepoStatusEvent {
   List<Object?> get props => [workspace];
 }
 
+class RefreshGitFileStatus extends RepoStatusEvent {
+  final String workspace;
+  const RefreshGitFileStatus(this.workspace);
+  @override
+  List<Object?> get props => [workspace];
+}
+
 class LoadCommitGraph extends RepoStatusEvent {
   final String workspace;
   const LoadCommitGraph(this.workspace);

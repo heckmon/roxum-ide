@@ -29,12 +29,12 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
 - **SSH support for connecting with remote systems.**  
 - **Intergrate with external AI providers for agentic editing.**
 
-## What's new in 2.8.0:
-  - FIX: [#56](https://github.com/heckmon/roxum-ide/issues/56)
-  - FIX: [#53](https://github.com/heckmon/roxum-ide/issues/53)
-  - FIX: [#52](https://github.com/heckmon/roxum-ide/issues/52)
-  - FIX: Zig compiler error.
-  - ENHANCEMENT: Optimized editor backend.
+## What's new in 2.9.0:
+  - FIX: [#48](https://github.com/heckmon/code_forge/issues/112)
+  - FEATURE: Option to use space over tab.
+  - FEATURE: Option to use custom tab size.
+  - ENHANCEMENT: Removed completion from terminal.
+  - ENHANCEMENT: Modified settings page.
 
 ---
 ### Gallery
