@@ -4,12 +4,11 @@ import 'dart:typed_data';
 import 'package:code_forge/code_forge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:roxum/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
+import 'package:universal_file_viewer/universal_file_viewer.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors;
 import 'package:roxum/bloc/repo_bloc/repo_bloc.dart';
 import 'package:roxum/ui/mdview.dart';
@@ -303,8 +302,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
         return;
       }
 
-      final url =
-          '${_viteUseHttps ? 'https' : 'http'}://localhost:$runningPort';
+      final url = '${_viteUseHttps ? 'https' : 'http'}://localhost:$runningPort';
       Navigator.of(context).push(
         PageRouteBuilder(
           pageBuilder: (context, animation, scondaryAnimation) =>
@@ -371,20 +369,53 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
       return Icon(
         Icons.image,
         size: 16,
-        color: appTheme.isDark
-            ? const Color(0xffc0c0c0)
-            : const Color(0xff4b4b4b),
+        color: Colors.green,
       );
     }
 
-    if (isPdfFilePath(editor.file.path)) {
-      return Icon(
-        Icons.picture_as_pdf,
-        size: 16,
-        color: appTheme.isDark
-            ? const Color(0xffc0c0c0)
-            : const Color(0xff4b4b4b),
-      );
+    switch (path.extension(editor.file.path).toLowerCase()) {
+      case '.pdf':
+        return Icon(
+          Icons.picture_as_pdf,
+          size: 16,
+          color: Colors.red,
+        );
+      case '.doc':
+      case '.docx':
+        return FaIcon(
+          FontAwesomeIcons.fileWord,
+          color: Colors.blue,
+          size: 15.5,
+        );
+      case '.ppt':
+      case '.pptx':
+        return FaIcon(
+          FontAwesomeIcons.filePowerpoint,
+          color: Colors.deepOrangeAccent,
+          size: 15.5,
+        );
+      case '.xls':
+      case '.xlsx':
+        return FaIcon(
+          FontAwesomeIcons.fileExcel,
+          color: Colors.lightGreen,
+          size: 15.5,
+        );
+      case '.csv':
+        return FaIcon(
+          FontAwesomeIcons.fileCsv,
+          color: Colors.lightGreen,
+          size: 15.5,
+        );
+      case '.mp4':
+      case '.avi':
+      case '.mov':
+      case '.mkv':
+        return Icon(
+          Icons.movie,
+          color: Colors.orangeAccent,
+          size: 16,
+        );
     }
 
     final icon = editor.languageDetails.icon;
@@ -403,8 +434,8 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
       Icons.insert_drive_file,
       size: 16,
       color: appTheme.isDark
-          ? const Color(0xffc0c0c0)
-          : const Color(0xff4b4b4b),
+        ? const Color(0xffc0c0c0)
+        : const Color(0xff4b4b4b),
     );
   }
 
@@ -560,24 +591,21 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
     );
   }
 
-  Widget _buildSvgPreviewPane(ActiveEditor editor, AppTheme appTheme) {
-    return _SvgPreviewPane(file: editor.file, appTheme: appTheme);
-  }
-
   Widget _buildPreviewPane(ActiveEditor editor, AppTheme appTheme) {
-    if (isImageFilePath(editor.file.path)) {
-      return _buildImagePreviewPane(editor, appTheme);
-    }
+    return Container(
+      color: Colors.white,
+      child: (){
+        if (isImageFilePath(editor.file.path)) {
+          return _buildImagePreviewPane(editor, appTheme);
+        }
 
-    if (isSvgFilePath(editor.file.path)) {
-      return _buildSvgPreviewPane(editor, appTheme);
-    }
+        if (isSvgFilePath(editor.file.path)) {
+          return _SvgPreviewPane(file: editor.file, appTheme: appTheme);
+        }
 
-    if (isPdfFilePath(editor.file.path)) {
-      return _PdfPreviewPane(filePath: editor.file.path, appTheme: appTheme);
-    }
-
-    return const SizedBox.shrink();
+        return UniversalFileViewer(file: editor.file);
+      }(),
+    );
   }
 
   @override
@@ -900,8 +928,8 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
     final currentControllers = editors.map((e) => e.controller).toSet();
 
     final removedControllers = _editorListeners.keys
-        .where((controller) => !currentControllers.contains(controller))
-        .toList();
+      .where((controller) => !currentControllers.contains(controller))
+      .toList();
 
     for (final controller in removedControllers) {
       final listener = _editorListeners.remove(controller);
@@ -1627,7 +1655,6 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
             ? setTempFile(widget.languageDetails!.extension[0])
             : Future.value(widget.file),
         (() async {
-          final prefs = await SharedPreferences.getInstance();
           List<dynamic> storedData = jsonDecode(await getRecent());
           final Map<String, dynamic> dataToInsert;
           if (widget.isProject) {
@@ -1686,9 +1713,8 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
             uniqueData.removeRange(3, uniqueData.length);
           }
           if (context.mounted) {
-            context.read<RecentBloc>().add(RecentEvent(recent: uniqueData));
+            context.read<RecentCubit>().addRecentItems(uniqueData);
           }
-          prefs.setString('recent', jsonEncode(uniqueData));
         })(),
         uiBloc.state.codeForgeConfig['enableLSP'] &&
             !widget.isProject &&
@@ -2214,13 +2240,52 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                                     size: 20,
                                                   );
                                                 }
-                                                if (normalizedExt == '.pdf') {
-                                                  return const Icon(
-                                                    Icons.picture_as_pdf,
-                                                    color: Colors.red,
-                                                    size: 20,
-                                                  );
+
+                                                switch (normalizedExt) {
+                                                  case '.pdf':
+                                                    return Icon(
+                                                      Icons.picture_as_pdf,
+                                                      size: 20,
+                                                      color: Colors.red,
+                                                    );
+                                                  case '.doc':
+                                                  case '.docx':
+                                                    return FaIcon(
+                                                      FontAwesomeIcons.fileWord,
+                                                      color: Colors.blue,
+                                                      size: 18.5,
+                                                    );
+                                                  case '.ppt':
+                                                  case '.pptx':
+                                                    return FaIcon(
+                                                      FontAwesomeIcons.filePowerpoint,
+                                                      color: Colors.deepOrangeAccent,
+                                                      size: 18.5,
+                                                    );
+                                                  case '.xls':
+                                                  case '.xlsx':
+                                                    return FaIcon(
+                                                      FontAwesomeIcons.fileExcel,
+                                                      color: Colors.lightGreen,
+                                                      size: 18.5,
+                                                    );
+                                                  case '.csv':
+                                                    return FaIcon(
+                                                      FontAwesomeIcons.fileCsv,
+                                                      color: Colors.lightGreen,
+                                                      size: 18.5,
+                                                    );
+                                                  case '.mp4':
+                                                  case '.avi':
+                                                  case '.mov':
+                                                  case '.mkv':
+                                                    return Icon(
+                                                      Icons.movie,
+                                                      size: 20,
+                                                      color: Colors.orangeAccent
+                                                    );
                                                 }
+
                                                 return SizedBox(
                                                   height: 20,
                                                   width: 20,
@@ -2887,8 +2952,8 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                     }
                                 
                                     if (isPreviewFilePath(filePath.path) && context.mounted) {
-                                      final message = isPdfFilePath(filePath.path)
-                                        ? 'PDF files can be previewed but are not executable.'
+                                      final message = isDocFilePath(filePath.path)
+                                        ? 'Documents files can be previewed but are not executable.'
                                         : 'Image/SVG files can be previewed but are not executable.';
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(content: Text(message)),
@@ -3573,18 +3638,6 @@ rustloader "$soPath"
   }
 }
 
-class _PdfPreviewPane extends StatefulWidget {
-  final String filePath;
-  final AppTheme appTheme;
-
-  const _PdfPreviewPane({
-    required this.filePath,
-    required this.appTheme,
-  });
-
-  @override
-  State<_PdfPreviewPane> createState() => _PdfPreviewPaneState();
-}
 
 class _SvgPreviewPane extends StatefulWidget {
   final File file;
@@ -3723,86 +3776,6 @@ class _SvgPreviewPaneState extends State<_SvgPreviewPane> {
           );
         },
       ),
-    );
-  }
-}
-
-class _PdfPreviewPaneState extends State<_PdfPreviewPane> {
-  bool _isReady = false;
-  String? _errorMessage;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!File(widget.filePath).existsSync()) {
-      return Center(
-        child: Text(
-          'PDF file not found.',
-          style: TextStyle(color: widget.appTheme.selectScreenCardTextColor),
-        ),
-      );
-    }
-
-    if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.picture_as_pdf_outlined, size: 44),
-              const SizedBox(height: 8),
-              Text(
-                'Failed to load PDF preview',
-                style: TextStyle(color: widget.appTheme.selectScreenCardTextColor),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[500]),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Stack(
-      children: [
-        PDFView(
-          key: ValueKey(widget.filePath),
-          filePath: widget.filePath,
-          enableSwipe: true,
-          swipeHorizontal: false,
-          autoSpacing: true,
-          pageFling: true,
-          fitPolicy: FitPolicy.BOTH,
-          onRender: (_) {
-            if (!mounted) return;
-            setState(() {
-              _isReady = true;
-            });
-          },
-          onError: (error) {
-            if (!mounted) return;
-            setState(() {
-              _errorMessage = error.toString();
-              _isReady = true;
-            });
-          },
-          onPageError: (page, error) {
-            if (!mounted) return;
-            setState(() {
-              _errorMessage = 'Page $page: $error';
-              _isReady = true;
-            });
-          },
-        ),
-        if (!_isReady)
-          const Center(
-            child: CircularProgressIndicator(),
-          ),
-      ],
     );
   }
 }

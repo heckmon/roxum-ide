@@ -93,7 +93,7 @@ class _MainAppState extends State<MainApp> {
         BlocProvider(create: (_) => ConfigBloc(codeForgeConfig: jsonDecode(widget.codeForgeConfig))),
         BlocProvider(create: (_) => FolderBloc()),
         BlocProvider(create: (_) => GitCommitBloc()),
-        BlocProvider(create: (_) => RecentBloc(recent: jsonDecode(widget.recent))),
+        BlocProvider(create: (_) => RecentCubit(RecentState(recent: jsonDecode(widget.recent)))),
         BlocProvider(create: (_) => AppThemeBloc(appTheme: themeMap[widget.appTheme]!)),
         BlocProvider(create: (_) => WebViewBloc()),
         BlocProvider(create: (_) => MenuSearchBloc()),

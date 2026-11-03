@@ -86,11 +86,6 @@ class FileTreeEvent extends UiEvent{
   FileTreeEvent({required this.folderStates});
 }
 
-class RecentEvent extends UiEvent{
-  final List<dynamic> recent;
-  RecentEvent({required this.recent});
-}
-
 class AppThemeEvent extends UiEvent{
   final AppTheme appTheme;
   AppThemeEvent({required this.appTheme});
@@ -202,7 +197,6 @@ class GitCommitEvent extends UiEvent {
   GitCommitEvent({required this.commitMessage});
 }
 
-// Workspace Search Events
 sealed class WorkspaceSearchEvent extends UiEvent {}
 
 class UpdateSearchResults extends WorkspaceSearchEvent {

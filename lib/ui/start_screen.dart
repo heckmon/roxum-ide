@@ -220,7 +220,7 @@ class _StartScreenState extends State<StartScreen> {
     Future.delayed(Duration(milliseconds: 10), () {
       if (context.mounted) {
         Navigator.of(context).pushReplacement(PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const SelectType(),
+          pageBuilder: (context, animation, secondaryAnimation) => const Home(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },

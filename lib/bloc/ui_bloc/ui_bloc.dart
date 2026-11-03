@@ -128,11 +128,15 @@ class FolderBloc extends Cubit<FolderState> {
   }
 }
 
-class RecentBloc extends Bloc<RecentEvent, RecentState>{
-  final List<dynamic> recent;
-  RecentBloc({required this.recent}) : super(RecentState(recent: recent)){
-    on<RecentEvent>((event, emit) => emit(RecentState(recent: event.recent)));
+class RecentCubit extends Cubit<RecentState>{
+  new(super.initialState);
+
+  Future<void> addRecentItems(List<dynamic> newItems) async{
+    final prefs = await SharedPreferences.getInstance();
+    emit(RecentState(recent: newItems));
+    prefs.setString('recent', jsonEncode(newItems));
   }
+  
 }
 
 class AppThemeBloc extends Bloc<AppThemeEvent, AppThemeState>{

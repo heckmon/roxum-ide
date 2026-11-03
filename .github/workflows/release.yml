@@ -165,12 +165,26 @@ jobs:
 
           "$APKSIGNER" verify --verbose roxum-full.apk
 
+      - name: Publish to Google Play
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+          packageName: com.roxum
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          tracks: internal,alpha,production
+          releaseName: Roxum v${{ github.ref_name }}
+          status: completed
+
+          whatsNewDirectory: distribution/whatsnew
+
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Roxum v${{ github.ref_name }}
-          body: ""
+          body: |
+            - Swipe to clear recent files/folders from the home screen.
+            - More file support.
           generate_release_notes: false
           draft: false
           files: |

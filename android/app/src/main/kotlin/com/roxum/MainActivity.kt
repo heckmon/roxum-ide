@@ -11,7 +11,6 @@ import android.provider.OpenableColumns
 import android.util.Log
 import androidx.annotation.NonNull
 import androidx.documentfile.provider.DocumentFile
-import io.endigo.plugins.pdfviewflutter.PDFViewFlutterPlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -71,7 +70,6 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        ensurePdfViewPluginRegistered(flutterEngine)
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -241,17 +239,6 @@ class MainActivity : FlutterActivity() {
         pfdEventSink = null
         super.onDestroy()
     }
-
-    private fun ensurePdfViewPluginRegistered(flutterEngine: FlutterEngine) {
-        try {
-            if (!flutterEngine.plugins.has(PDFViewFlutterPlugin::class.java)) {
-                flutterEngine.plugins.add(PDFViewFlutterPlugin())
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to register flutter_pdfview plugin", e)
-        }
-    }
-
 
     private fun launchSafPicker() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {

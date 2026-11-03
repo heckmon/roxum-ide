@@ -28,20 +28,19 @@ import '../utils/languages.dart';
 import '../utils/themes.dart';
 import 'widgets.dart';
 
-class SelectType extends StatefulWidget {
-  const SelectType({super.key});
+class Home extends StatefulWidget {
+  const Home({super.key});
   @override
-  State<SelectType> createState() => _SelectTypeState();
+  State<Home> createState() => _HomeState();
 }
 
-class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
+class _HomeState extends State<Home> with WidgetsBindingObserver {
   final createFileController = TextEditingController();
   final _createFileKey = GlobalKey<FormState>();
   final _cloneRepoKey = GlobalKey<FormState>();
   AnimationStatus _terminalSelectionStatus = .dismissed;
-  bool _didShowPackageUpdateToast = false;
-  bool _didShowStorageMigrationToast = false;
-  bool _checkingPendingSharedFile = false;
+  bool _didShowPackageUpdateToast = false, _didShowStorageMigrationToast = false;
+  bool _checkingPendingSharedFile = false, _isDraggingRecentLTR = false;
   int _pendingSharedFileRetryCount = 0;
 
   @override
@@ -1593,7 +1592,7 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      BlocBuilder<RecentBloc, RecentState>(
+                      BlocBuilder<RecentCubit, RecentState>(
                         builder: (context, recentState) {
                           final List<Map<String, dynamic>> recentData =
                             recentState.recent
@@ -1617,120 +1616,208 @@ class _SelectTypeState extends State<SelectType> with WidgetsBindingObserver {
                                 itemCount: recentData.length,
                                 itemBuilder: (context, index) {
                                   final currentEntry = recentData[index];
-                                  final String entryType = currentEntry['type'] as String? ?? 'file';
-                                  final String entryPath = currentEntry['path'] as String? ?? '';
-                                  final String rootDir = currentEntry['rootDir'] as String?
+                                  final entryType = currentEntry['type'] as String? ?? 'file';
+                                  final entryPath = currentEntry['path'] as String? ?? '';
+                                  final rootDir = currentEntry['rootDir'] as String?
                                     ?? (entryType == 'project' ? entryPath : path.dirname(entryPath));
-                                  final bool isProject = entryType == 'project';
-                                  final bool exists = isProject
+                                  final isProject = entryType == 'project';
+                                  final exists = isProject
                                     ? Directory(entryPath).existsSync()
                                     : File(entryPath).existsSync();
                                   return Card(
-                                    child: ListTile(
-                                      textColor: appThemestate.appTheme.selectScreenCardTextColor,
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(15),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: .circular(15)
+                                    ),
+                                    child: Dismissible(
+                                      key: ValueKey<String>(entryPath),
+                                      background: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red[900],
+                                          borderRadius: .circular(15)
                                         ),
-                                      ),
-                                      onTap: () {
-                                        if (!exists) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                isProject
-                                                  ? l10n.projectNotFound
-                                                  : l10n.fileNotFound,
+                                        child: Center(
+                                          child: Row(
+                                            mainAxisAlignment: .start,
+                                            children: [
+                                              if(!_isDraggingRecentLTR)
+                                              const Expanded(child: SizedBox()),
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 18),
+                                                child: Row(
+                                                  children: [
+                                                    Icon(Icons.delete, color: Colors.grey[400]),
+                                                    Text(
+                                                      "Remove",
+                                                      style: TextStyle(color: Colors.grey[400])
+                                                    )
+                                                  ],
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                          return;
+                                            ],
+                                          ),
+                                        )
+                                      ),
+                                      onUpdate: (details) {
+                                        if(details.direction == .endToStart && _isDraggingRecentLTR) {
+                                          setState(() => _isDraggingRecentLTR = false);
+                                        } else if(details.direction == .startToEnd) {
+                                          setState(() => _isDraggingRecentLTR = true);
                                         }
-                              
-                                        if (isProject) {
+                                      },
+                                      onDismissed:(direction) {
+                                        recentData.removeAt(index);
+                                        context.read<RecentCubit>().addRecentItems(recentData);
+                                      },
+                                      child: ListTile(
+                                        textColor: appThemestate.appTheme.selectScreenCardTextColor,
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: .all(.circular(15)),
+                                        ),
+                                        onTap: () {
+                                          if (!exists) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                  isProject
+                                                    ? l10n.projectNotFound
+                                                    : l10n.fileNotFound,
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                                                    
+                                          if (isProject) {
+                                            Navigator.of(context).push(
+                                              PageRouteBuilder(
+                                                pageBuilder:(context, animation, secondaryAnimation) => EditorPage(
+                                                  rootDir: entryPath,
+                                                  isCloned: true,
+                                                  isProject: true,
+                                                  languageDetails: null,
+                                                ),
+                                                transitionsBuilder:(context, animation, secondaryAnimation, child,) {
+                                                  return SizeTransition(
+                                                    sizeFactor:
+                                                        animation,
+                                                    child: child,
+                                                  );
+                                                },
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                                                    
                                           Navigator.of(context).push(
                                             PageRouteBuilder(
-                                              pageBuilder:(context, animation, secondaryAnimation) => EditorPage(
-                                                rootDir: entryPath,
-                                                isCloned: true,
-                                                isProject: true,
-                                                languageDetails: null,
+                                              pageBuilder: (context, animation, secondaryAnimation) => EditorPage(
+                                                file: File(entryPath),
+                                                rootDir: rootDir,
+                                                languageDetails: (() {
+                                                  final matchingLang = languages.where(
+                                                    (lang) => lang.extension.contains(
+                                                      path.extension(entryPath).toLowerCase().replaceFirst(".",""))).toList();
+                                                  if (matchingLang.isNotEmpty) return matchingLang[0];
+                                                  return Language(
+                                                    name: "Unknown",
+                                                    extension: ["null"],
+                                                    details: "Unknown language",
+                                                    language: unknown,
+                                                    helloWorld: "Unknown type of file",
+                                                    icon: null
+                                                  );
+                                                })(),
+                                                isProject: false,
                                               ),
-                                              transitionsBuilder:(context, animation, secondaryAnimation, child,) {
+                                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                                 return SizeTransition(
-                                                  sizeFactor:
-                                                      animation,
+                                                  sizeFactor: animation,
                                                   child: child,
                                                 );
                                               },
                                             ),
                                           );
-                                          return;
-                                        }
-                              
-                                        Navigator.of(context).push(
-                                          PageRouteBuilder(
-                                            pageBuilder: (context, animation, secondaryAnimation) => EditorPage(
-                                              file: File(entryPath),
-                                              rootDir: rootDir,
-                                              languageDetails: (() {
-                                                final matchingLang = languages.where(
-                                                  (lang) => lang.extension.contains(
-                                                    path.extension(entryPath).toLowerCase().replaceFirst(".",""))).toList();
-                                                if (matchingLang.isNotEmpty) return matchingLang[0];
-                                                return Language(
-                                                  name: "Unknown",
-                                                  extension: ["null"],
-                                                  details: "Unknown language",
-                                                  language: unknown,
-                                                  helloWorld: "Unknown type of file",
-                                                  icon: null
-                                                );
-                                              })(),
-                                              isProject: false,
-                                            ),
-                                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                              return SizeTransition(
-                                                sizeFactor: animation,
-                                                child: child,
-                                              );
-                                            },
+                                        },
+                                        title: Text(
+                                          exists
+                                            ? path.basename(entryPath)
+                                            : "${path.basename(entryPath)} - ${isProject ? l10n.projectNotFound : l10n.fileNotFound}",
+                                          style: const TextStyle(
+                                            fontSize: 17,
                                           ),
-                                        );
-                                      },
-                                      title: Text(
-                                        exists
-                                          ? path.basename(entryPath)
-                                          : "${path.basename(entryPath)} - ${isProject ? l10n.projectNotFound : l10n.fileNotFound}",
-                                        style: const TextStyle(
-                                          fontSize: 17,
                                         ),
-                                      ),
-                                      subtitle: Text(
-                                        rootDir,
-                                        style: TextStyle(
-                                          color:
-                                            appThemestate.appTheme.isDark
-                                            ? Colors.grey
-                                            : Colors.grey[600],
-                                          fontSize: 12,
+                                        subtitle: Text(
+                                          rootDir,
+                                          style: TextStyle(
+                                            color:
+                                              appThemestate.appTheme.isDark
+                                              ? Colors.grey
+                                              : Colors.grey[600],
+                                            fontSize: 12,
+                                          ),
                                         ),
+                                        leading: (() {
+                                          if (isProject) {
+                                            return const Icon(
+                                              Icons.folder_open_rounded,
+                                              color: Color(0xff5090c8),
+                                            );
+                                          }
+
+                                          switch (path.extension(entryPath).toLowerCase()) {
+                                            case '.pdf':
+                                              return Icon(
+                                                Icons.picture_as_pdf,
+                                                size: 25,
+                                                color: Colors.red,
+                                              );
+                                            case '.doc':
+                                            case '.docx':
+                                              return FaIcon(
+                                                FontAwesomeIcons.fileWord,
+                                                color: Colors.blue,
+                                                size: 23.5,
+                                              );
+                                            case '.ppt':
+                                            case '.pptx':
+                                              return FaIcon(
+                                                FontAwesomeIcons.filePowerpoint,
+                                                color: Colors.deepOrangeAccent,
+                                                size: 23.5,
+                                              );
+                                            case '.xls':
+                                            case '.xlsx':
+                                              return FaIcon(
+                                                FontAwesomeIcons.fileExcel,
+                                                color: Colors.lightGreen,
+                                                size: 23.5,
+                                              );
+                                            case '.csv':
+                                              return FaIcon(
+                                                FontAwesomeIcons.fileCsv,
+                                                color: Colors.lightGreen,
+                                                size: 23.5,
+                                              );
+                                            case '.mp4':
+                                            case '.avi':
+                                            case '.mov':
+                                            case '.mkv':
+                                              return Icon(
+                                                Icons.movie,
+                                                color: Colors.orangeAccent,
+                                                size: 25
+                                              );
+                                          }
+
+                                          final matchingLang = languages.where(
+                                            (lang) =>lang.extension.contains(
+                                              path.extension(entryPath).toLowerCase().replaceFirst(".",""))).toList();
+                                          if (matchingLang.isNotEmpty) return matchingLang[0].icon;
+                                          return langtxt.icon;
+                                        })(),
                                       ),
-                                      leading: (() {
-                                        if (isProject) {
-                                          return const Icon(
-                                            Icons.folder_open_rounded,
-                                            color: Color(0xff5090c8),
-                                          );
-                                        }
-                                        final matchingLang = languages.where(
-                                          (lang) =>lang.extension.contains(
-                                            path.extension(entryPath,).toLowerCase().replaceFirst(".",""))).toList();
-                                        if (matchingLang.isNotEmpty) return matchingLang[0].icon;
-                                        return langtxt.icon;
-                                      })(),
                                     ),
                                   );
                                 },

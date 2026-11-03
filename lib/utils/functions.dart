@@ -51,8 +51,14 @@ bool isImageFilePath(String filePath) {
   );
 }
 
-bool isPdfFilePath(String filePath) {
-  return path.extension(filePath).toLowerCase() == '.pdf';
+bool isDocFilePath(String filePath) {
+  return !(isImageFilePath(filePath) ||
+  isSvgFilePath(filePath) ||
+  languages.any(
+    (lang) => lang.extension.contains(
+      path.extension(filePath).toLowerCase().substring(1)
+    )
+  ));
 }
 
 bool isSvgFilePath(String filePath) {
@@ -65,7 +71,7 @@ bool isPreviewFilePath(String filePath) {
   return
     isImageFilePath(filePath) ||
     isSvgFilePath(filePath) ||
-    isPdfFilePath(filePath);
+    isDocFilePath(filePath);
 }
 
 const String _legacyProjectDir = '/data/data/com.roxum/Roxum/Projects';
