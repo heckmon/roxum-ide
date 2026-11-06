@@ -157,10 +157,10 @@ packages:
     dependency: "direct main"
     description:
       name: code_forge
-      sha256: "8f73d3043c3ca7fc92669ff1c4f6d013f74183d1674791165e88f7bc0771cdbf"
+      sha256: f7bff40133f31f75bec0e40a5a2202f18e9284f704a13b85e6702a4507998e75
       url: "https://pub.dev"
     source: hosted
-    version: "11.6.1"
+    version: "11.7.0"
   collection:
     dependency: transitive
     description:

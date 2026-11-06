@@ -213,43 +213,44 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
                 await controller.injectJavascriptFileFromAsset(assetFilePath: "assets/webview/eruda.js");
                 await controller.evaluateJavascript(source: """
-                        window.flutter_inappwebview.callHandler = window.flutter_inappwebview.callHandler || function() {};
-                        window.setViewport = function(isMobile) {
-                          let viewportMetaTag = document.querySelector('meta[name="viewport"]');
-                          if (!viewportMetaTag) {
-                            viewportMetaTag = document.createElement('meta');
-                            viewportMetaTag.setAttribute('name', 'viewport');
-                            document.head.appendChild(viewportMetaTag);
-                          }
-                          if (isMobile) {
-                            viewportMetaTag.setAttribute('content', 'width=device-width, initial-scale=1.0');
-                          } else {
-                            viewportMetaTag.setAttribute('content', 'width=1200');
-                          }
-                        };
-            
-                        if (window.setViewport) {
-                          window.setViewport(${state.isMobile});
-                        } else {
-                          console.error('setViewport is not defined');
-                        }
-                        """);
-                await controller.evaluateJavascript(source: """
-                      window.setEruda = function(val) {
-                        if (val) {
-                            eruda.init();
-                        } else {
-                          if (window.eruda) {
-                            eruda.destroy();
-                          }
-                        }
-                      };
-                    if (window.setEruda) {
-                      window.setEruda(${state.isConsole});
-                    } else {
-                      console.error('setEruda is not defined');
+                  window.flutter_inappwebview.callHandler = window.flutter_inappwebview.callHandler || function() {};
+                  window.setViewport = function(isMobile) {
+                    let viewportMetaTag = document.querySelector('meta[name="viewport"]');
+                    if (!viewportMetaTag) {
+                      viewportMetaTag = document.createElement('meta');
+                      viewportMetaTag.setAttribute('name', 'viewport');
+                      document.head.appendChild(viewportMetaTag);
                     }
-                    """);
+                    if (isMobile) {
+                      viewportMetaTag.setAttribute('content', 'width=device-width, initial-scale=1.0');
+                    } else {
+                      viewportMetaTag.setAttribute('content', 'width=1200');
+                    }
+                  };
+      
+                  if (window.setViewport) {
+                    window.setViewport(${state.isMobile});
+                  } else {
+                    console.error('setViewport is not defined');
+                  }
+                  """);
+                  
+                await controller.evaluateJavascript(source: """
+                  window.setEruda = function(val) {
+                    if (val) {
+                        eruda.init();
+                    } else {
+                      if (window.eruda) {
+                        eruda.destroy();
+                      }
+                    }
+                  };
+                if (window.setEruda) {
+                  window.setEruda(${state.isConsole});
+                } else {
+                  console.error('setEruda is not defined');
+                }
+                """);
               },
               onLoadStop: (controller, url) {
                 setState(() {

@@ -2961,9 +2961,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                       return;
                                     }
                                 
-                                    final String extension = path.extension(
-                                      filePath.path,
-                                    );
+                                    final String extension = path.extension(filePath.path);
 
                                     if (!context.mounted) return;
                                     switch (extension) {
@@ -3233,7 +3231,6 @@ rustloader "$soPath"
                                             pageBuilder:(context, animation, scondaryAnimation) => MdView(
                                               data: filePath.readAsStringSync(),
                                               appTheme: appTheme,
-                                              theme: context.read<ConfigBloc>().state,
                                             ),
                                             transitionsBuilder:(context, animation, secondaryAnimation, child) {
                                               return SizeTransition(

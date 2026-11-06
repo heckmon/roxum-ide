@@ -10,8 +10,7 @@ import 'package:flutter_json/flutter_json.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:http/http.dart' as http;
 import 'package:llama_flutter_android/llama_flutter_android.dart';
-import 'package:markdown_widget/config/configs.dart';
-import 'package:markdown_widget/widget/all.dart';
+import 'package:markdown_widget/markdown_widget.dart';
 import 'package:path/path.dart' as path;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
@@ -602,12 +601,13 @@ class _CodeEditorState extends State<CodeEditor> with AutomaticKeepAliveClientMi
                     enableFolding: (configState.codeForgeConfig['enableFolding'] ?? true) as bool,
                     language: primaryMode,
                     extraLanguages: (() {
-                      if (ext == '.tsx' || ext == '.jsx') {
+                      if (ext == '.tsx' || ext == '.jsx' || ext == '.md') {
                         final Mode? xmlMode = langxml.language;
                         if (xmlMode != null) {
                           return <Mode>[xmlMode];
                         }
                       }
+
                       return const <Mode>[];
                     })(),
                     customCodeSnippets: widget.language.customCodeSnippet,
