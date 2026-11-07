@@ -12,7 +12,7 @@
 > The upcoming v3.0.0 release aims to address these issues. However, some planned changes may conflict with Google Play policies. Consequently, future versions of Roxum may move from the Play Store to F-Droid and GitHub Releases.
 
 <details>
-<summary><h2>What's coming in v3.0.0?</h2></summary>
+<summary><h2>What's coming in v3.0.0?</h2> Click to expand</summary>
 
 ### rx – The Roxum Package Manager
 
