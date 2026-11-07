@@ -6,13 +6,24 @@
 
 # Roxum IDE
 
+Roxum IDE is a mobile-first code editor and mini IDE for Android, built with Flutter.
+It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runtime downloads, and deep customization in one app.
+
+#### Roxum uses the powerful [code_forge](https://github.com/heckmon/code_forge) package as the editor engine.
+
+<a href="https://play.google.com/store/apps/details?id=com.roxum">
+  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60">
+</a>
+
 > [!NOTE]
-> The current version has several issues and is quite bulky for non-Play Store users.
+> The current version has several issues and is quite bulky for non-playstore users.
 >
 > The upcoming v3.0.0 release aims to address these issues. However, some planned changes may conflict with Google Play policies. Consequently, future versions of Roxum may move from the Play Store to F-Droid and GitHub Releases.
 
+---
+
 <details>
-<summary><h2>What's coming in v3.0.0?</h2> Click to expand</summary>
+<summary><h2>What's coming in v3.0.0?</h2></summary>
 
 ### rx – The Roxum Package Manager
 
@@ -36,14 +47,7 @@
 - Large C/C++ files failing to print output to stdout.
 </details>
 
-Roxum IDE is a mobile-first code editor and mini IDE for Android, built with Flutter.
-It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runtime downloads, and deep customization in one app.
-
-#### Roxum uses the powerful [code_forge](https://github.com/heckmon/code_forge) package as the editor engine.
-
-<a href="https://play.google.com/store/apps/details?id=com.roxum">
-  <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60">
-</a>
+---
 
 ## Feature list:
 - **Completely free and open source.**
