@@ -6,16 +6,20 @@
 
 # Roxum IDE
 
-«[!NOTE]
+Roxum IDE
+
+«Note
 
 The current version has several issues and is quite bulky for non-Play Store users.
 
-The upcoming v3.0.0 release aims to address these issues. However, some planned changes may violate Google Play policies. As a result, future versions of Roxum may move from the Play Store to F-Droid and GitHub Releases.
+The upcoming v3.0.0 release aims to address these issues. However, some planned changes may conflict with Google Play policies. Consequently, future versions of Roxum may move from the Play Store to F-Droid and GitHub Releases.»
 
-- rX - The Roxum Package Manager
+What's coming in v3.0.0?
+
+- rx - The Roxum Package Manager
   
-  - Instead of downloading predefined compilers, users will be able to install a wide range of Linux tools.
-  - This approach may violate "Google Play policies" (https://support.google.com/googleplay/android-developer/answer/16559646), which is one of the reasons for considering distribution outside the Play Store.
+  - Install a wide range of Linux tools instead of being restricted to predefined compilers.
+  - This approach may conflict with "Google Play policies" (https://support.google.com/googleplay/android-developer/answer/16559646).
 
 - GitHub-Flavored Markdown
   
@@ -23,14 +27,15 @@ The upcoming v3.0.0 release aims to address these issues. However, some planned 
 
 - Custom Extension Support
   
-  - Users will be able to build their own extensions, similar to VS Code, and install extensions created by other users through the in-app extension store.
-  - Like Neovim, Roxum will use Lua as its extension scripting language.
+  - Build custom extensions, similar to VS Code.
+  - Install extensions developed by other users through the in-app extension store.
+  - Lua will be the extension scripting language, similar to Neovim.
 
 - Bug Fixes
   
   - GitHub Copilot responses not appearing in chat after logging in.
   - TOML files failing to open.
-  - Large C/C++ files failing to print output to stdout.»
+  - Large C/C++ files failing to print output to stdout.
 
 Roxum IDE is a mobile-first code editor and mini IDE for Android, built with Flutter.
 It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runtime downloads, and deep customization in one app.
