@@ -56,7 +56,7 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
 - **Offline compilers and extensions for popular languages.**
 - **245 built-in themes and, an option for creating custom themes.**
 - **Built-in terminal.**
-- **Rust based editor backend using rope and sum tree data structures, similar to the zed editor.**
+- **A powerful editor backend using rope and sum tree data structures, similar to the zed editor.**
 - **AI Code Completion.**
 - **LSP support (suggesions, completions, error highlighting, hover info, etc).**
 - **Git and Github intergration.**
