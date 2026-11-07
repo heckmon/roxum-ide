@@ -15,7 +15,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
-import 'package:mime/mime.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:roxum/utils/themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,8 +58,45 @@ bool isSvgFilePath(String filePath) {
 }
 
 bool isPreviewFilePath(String filePath) {
-  final mime = lookupMimeType(filePath);
-  return mime != null && !mime.startsWith("text/");
+  return !isTextFile(filePath);
+}
+
+bool isTextFile(String path, {int sampleSize = 8192}) {
+  final raf = File(path).openSync();
+  try {
+    final bytes = raf.readSync(sampleSize);
+    if (bytes.isEmpty) return true;
+
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xEF &&
+        bytes[1] == 0xBB &&
+        bytes[2] == 0xBF) {
+      return true;
+    }
+    if (bytes.length >= 2 &&
+        ((bytes[0] == 0xFF && bytes[1] == 0xFE) ||
+            (bytes[0] == 0xFE && bytes[1] == 0xFF))) {
+      return true;
+    }
+
+    int suspicious = 0;
+    for (final b in bytes) {
+      if (b == 0) return false;
+      if (b < 32 &&
+          b != 9 &&
+          b != 10 &&
+          b != 11 &&
+          b != 12 &&
+          b != 13 &&
+          b != 27) {
+        suspicious++;
+      }
+    }
+
+    return suspicious / bytes.length < 0.10;
+  } finally {
+    raf.close();
+  }
 }
 
 const String _legacyProjectDir = '/data/data/com.roxum/Roxum/Projects';

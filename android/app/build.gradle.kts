@@ -6,6 +6,34 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+//-----------------------------------------------------------------------
+// Debug-only: bundle every *_feature module's assets and jniLibs into the
+// base APK so they work without Play delivery.
+
+val onlyFeatures = (project.findProperty("debugFeatures") as String?)
+    ?.split(",")?.map { it.trim() + "_feature" }
+
+val featureDirs = file("src").listFiles { f ->
+    f.isDirectory && f.name.endsWith("_feature") &&
+        (onlyFeatures == null || f.name in onlyFeatures)
+}?.sortedBy { it.name }.orEmpty()
+
+val debugBundles = layout.buildDirectory.dir("generated/debug_bundles")
+val stageDebugBundles by tasks.registering(Copy::class) {
+    featureDirs.forEach { dir ->
+        from(File(dir, "src/main/assets")) { include("*.zip") }
+    }
+    into(debugBundles.map { it.dir("flutter_assets/debug_bundles") })
+}
+
+val debugJniLibs = layout.buildDirectory.dir("generated/debug_jnilibs")
+val stageDebugJniLibs by tasks.registering(Copy::class) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE // first copy wins
+    featureDirs.forEach { from(File(it, "src/main/jniLibs")) }
+    into(debugJniLibs)
+}
+// -----------------------------------------------------------------------
+
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -16,6 +44,15 @@ android {
     namespace = "com.roxum"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
+
+    // -----------------------------------------------------------------
+    sourceSets {
+        getByName("debug") {
+            assets.srcDir(debugBundles.get().asFile)
+            jniLibs.srcDir(debugJniLibs.get().asFile)
+        }
+    }
+    // -------------------------------------------------------------------
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -48,7 +85,7 @@ android {
             signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"    
+                "proguard-rules.pro"
             )
         }
     }
@@ -58,6 +95,7 @@ android {
             useLegacyPackaging = true
             pickFirsts += listOf(
                 "lib/arm64-v8a/libc++_shared.so",
+                "lib/arm64-v8a/libandroid-execinfo.so",
             )
             excludes += setOf("**/armeabi-v7a/**", "**/x86_64/**")
         }
@@ -89,18 +127,27 @@ android {
     )
 }
 
+// ----------------------------------------------------------------
+tasks.configureEach {
+    if (name.startsWith("merge") && name.endsWith("DebugAssets")) {
+        dependsOn(stageDebugBundles)
+    }
+    if (name.endsWith("DebugJniLibFolders")) {
+        dependsOn(stageDebugJniLibs)
+    }
+}
+// ----------------------------------------------------------------
+
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 
-
 dependencies {
     implementation("androidx.documentfile:documentfile:1.0.1")
     implementation("com.google.android.play:feature-delivery:2.1.0")
 }
-
 
 flutter {
     source = "../.."

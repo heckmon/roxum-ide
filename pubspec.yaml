@@ -1,7 +1,7 @@
 name: roxum
 description: "A minimal and powerful IDE for Android."
 publish_to: 'none'
-version: 2.10.0+45
+version: 2.11.0+46
 
 environment:
   sdk: ^3.13.7
@@ -9,7 +9,7 @@ environment:
 dependencies:
   android_intent_plus: ^6.0.0
   bloc: ^9.2.1
-  code_forge: ^11.6.0
+  code_forge: ^11.7.1
   cryptography: ^2.9.0
   dartssh2: ^4.1.0
   diff_match_patch: ^0.4.1
@@ -34,12 +34,11 @@ dependencies:
   llama_flutter_android: { git: https://github.com/heckmon/Llama-Flutter.git }
   markdown: ^7.3.1
   markdown_widget: ^2.3.2+8
-  mime: ^2.1.0
   path: ^1.9.0
   percent_indicator: ^4.2.5
   re_highlight: ^0.0.3
   shared_preferences: ^2.5.6
-  universal_file_viewer: ^0.1.7
+  universal_file_viewer: { git: https://github.com/heckmon/universal_file_viewer.git }
   url_launcher: ^6.3.3
   vector_math: ^2.4.4
   xterm2: ^5.4.0

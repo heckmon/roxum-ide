@@ -25,14 +25,10 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
 <details>
 <summary><h2>What's coming in v3.0.0?</h2></summary>
 
-### rx – The Roxum Package Manager
+### rox – The Roxum Package Manager
 
 - Install a wide range of Linux tools instead of being restricted to predefined compilers.
 - This approach may conflict with [Google Play policies](https://support.google.com/googleplay/android-developer/answer/16559646).
-
-### GitHub-Flavored Markdown
-
-- Roxum's built-in Markdown engine has been migrated to GitHub-Flavored Markdown (GFM).
 
 ### Custom Extension Support
 
@@ -40,11 +36,6 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
 - Install extensions developed by other users through the in-app extension store.
 - Lua will be the extension scripting language, similar to Neovim.
 
-### Bug Fixes
-
-- GitHub Copilot responses not appearing in chat after logging in.
-- TOML files failing to open.
-- Large C/C++ files failing to print output to stdout.
 </details>
 
 ---
@@ -63,9 +54,10 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
 - **SSH support for connecting with remote systems.**  
 - **Intergrate with external AI providers for agentic editing.**
 
-## What's new in 2.10.0:
- - Swipe to clear recent files/folders from the home screen.
- - More file support.
+## What's new in 2.11.0:
+ - Enhanced code execution
+ - Roxum's built-in Markdown engine has been migrated to GitHub-Flavored Markdown (GFM).
+ - Fixed file opening bugs.
 
 ---
 ### Gallery
@@ -120,6 +112,15 @@ Make sure that [git-lfs](https://git-lfs.com/) is installed in your system and a
 > To include all compilers, interpreters and extensions in the build, we build it as a standalone `aab` file, which is bigger compared to the APK downloaded from the Play Store. The Play Store build is smaller because these external dependencies are downloaded on demand when the user requests the particular compiler/interpreter/extension.
 
 Make sure to install necessary Flutter and Android development tools before starting.
+
+### With flutter
+```bash
+flutter run
+```
+---
+### OR
+
+### With gradlew
 
 ```bash
 cd android && ./gradlew :app:bundleRelease

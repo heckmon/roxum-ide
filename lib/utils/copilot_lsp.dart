@@ -15,10 +15,8 @@ enum CopilotAccountStatus {
 
 class CopilotSignInPayload {
   final String status;
-  final String? userCode;
-  final String? verificationUri;
-  final int? expiresIn;
-  final int? interval;
+  final String? userCode, verificationUri;
+  final int? expiresIn, interval;
   final String? user;
   final Map<String, dynamic>? command;
 
@@ -51,11 +49,8 @@ class CopilotSignInPayload {
 }
 
 class CopilotCompletion {
-  final String uuid;
-  final String text;
-  final String displayText;
-  final Map<String, dynamic> position;
-  final Map<String, dynamic> range;
+  final String uuid, text, displayText;
+  final Map<String, dynamic> position, range;
 
   CopilotCompletion({
     required this.uuid,
@@ -77,10 +72,7 @@ class CopilotCompletion {
 }
 
 class CopilotConversationEntry {
-  final String kind;
-  final String conversationId;
-  final String turnId;
-  final String reply;
+  final String kind, conversationId, turnId, reply;
   final List<dynamic> references;
   final bool hideText;
 
@@ -119,19 +111,16 @@ class CopilotConversationEntry {
 class CopilotLsp {
   final String? workspacePath;
   final String configPath;
-  final StreamController<Map<String, dynamic>> _responseController = StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<Map<String, dynamic>> _notificationController = StreamController<Map<String, dynamic>>.broadcast();
-  final StreamController<Map<String, dynamic>> _progressController = StreamController<Map<String, dynamic>>.broadcast();
+  final _responseController = StreamController<Map<String, dynamic>>.broadcast();
+  final _notificationController = StreamController<Map<String, dynamic>>.broadcast();
+  final _progressController = StreamController<Map<String, dynamic>>.broadcast();
   late Process _process;
   final List<int> _buffer = [];
   final Map<String, int> _openDocuments = {};
   int _nextId = 0;
-  bool _isSending = false;
-  bool _isInitialized = false;
-  bool _isDisposed = false;
+  bool _isSending = false, _isInitialized = false, _isDisposed = false;
   CopilotAccountStatus _accountStatus = CopilotAccountStatus.notSignedIn;
-  String? _currentUser;
-  String? _conversationId;
+  String? _currentUser, _conversationId;
   List<String> _serverCommands = const [];
 
   bool get isInitialized => _isInitialized;

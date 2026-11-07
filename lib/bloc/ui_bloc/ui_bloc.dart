@@ -1214,25 +1214,12 @@ class CopilotChatBloc extends Bloc<CopilotChatEvent, CopilotChatState> {
       try {
         final models = await _chatClient!.getCopilotModels();
         final data = models['data'] as List<dynamic>? ?? [];
-        debugPrint('[CopilotChatBloc] Raw model payload count: ${data.length}');
         final parsedModels = data
             .whereType<Map>()
             .map((model) => Map<String, dynamic>.from(model))
             .where((model) => model['id'] != null && model['name'] != null)
             .where(_isChatCapableModel)
             .toList();
-
-        final modelSummaries = parsedModels
-            .map((m) {
-              final id = m['id'];
-              final picker = m['model_picker_enabled'];
-              final preview = m['preview'];
-              return '$id(picker=$picker,preview=$preview)';
-            })
-            .join(', ');
-        debugPrint(
-          '[CopilotChatBloc] Parsed filtered model count: ${parsedModels.length}. Models: $modelSummaries',
-        );
 
         emit(state.copyWith(
           models: parsedModels,

@@ -599,10 +599,15 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
         return _SvgPreviewPane(file: editor.file, appTheme: appTheme);
       }
 
-      //TODO: Replace with custom implemnentation
       return UniversalFileViewer(
         file: editor.file,
         backgroundColor: Colors.white,
+        unsupportedBackgroundColor: appTheme.scaffoldBg,
+        openExternalAppButtonStyle: ElevatedButton.styleFrom(
+          foregroundColor: appTheme.selectScreenCardTextColor,
+          backgroundColor: appTheme.selectScreenCardsBg,
+          shape: RoundedRectangleBorder(borderRadius: .circular(5))
+        ),
       );
     }();
   }
@@ -3010,35 +3015,41 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                         break;
                                       case '.zig':
                                         final String zigExe = path.join(tempDir, '.roxum-zig-run');
+                                        final String zigObj = path.join(tempDir, '.roxum-zig-run.o');
+                                        final String tlsZig = path.join(tempDir, '.roxum-tls-align.zig');
+                                        final String tlsObj = path.join(tempDir, '.roxum-tls-align.o');
                                         final String zigCommand =
 '''
 set -e
 
-link_dir="$runtimesDir/clang/sysroot/.roxum_zig_android_libs"
-
 cleanup() {
-    rm -f "$zigExe"
-    rm -rf "\$link_dir"
+    rm -f "$zigExe" "$zigObj" "$tlsZig" "$tlsObj"
 }
-
 trap cleanup EXIT
-
-mkdir -p "\$link_dir"
-ln -sf /system/lib64/libc.so "\$link_dir/liblibc.so"
-ln -sf /system/lib64/libm.so "\$link_dir/liblibm.so"
-ln -sf /system/lib64/libdl.so "\$link_dir/liblibdl.so"
 
 cd "$tempDir"
 
-zig build-exe "${filePath.path}" \\
-    -fPIE \\
+# 1. Create 64-byte TLS alignment object required by ARM64 Bionic
+cat << 'EOF' > "$tlsZig"
+export threadlocal var __bionic_tls_align: [64]u8 align(64) = [_]u8{0} ** 64;
+EOF
+
+zig build-obj "$tlsZig" \\
+    -fPIC \\
     -target aarch64-linux-android \\
-    --sysroot "$runtimesDir/clang/sysroot" \\
-    -L/.roxum_zig_android_libs \\
-    -llibc \\
-    -llibm \\
-    -llibdl \\
-    -femit-bin="$zigExe"
+    -femit-bin="$tlsObj"
+
+# 2. Compile user Zig code to an object file
+# -fstrip prevents Zig's debug runtime from trying to read /proc/self/exe (which is /system/bin/linker64)
+zig build-obj "${filePath.path}" \\
+    -fPIE \\
+    -fstrip \\
+    -target aarch64-linux-android \\
+    -lc \\
+    -femit-bin="$zigObj"
+
+# 3. Link with clang (same linker used by Go and Rust)
+clang -pie "$zigObj" "$tlsObj" -o "$zigExe" -lc -lm -ldl
 
 $_linker64 "$zigExe"
 ''';

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:roxum/l10n/app_localizations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -417,7 +419,7 @@ class _DownloadManagerState extends State<DownloadManager> {
       isExtension: isExtension,
     );
 
-    if (Platform.isAndroid && pfdConfig == null) {
+    if (pfdConfig == null) {
       if (mounted) {
         setState(() {
           loadingIndexes.remove(index);
@@ -436,14 +438,25 @@ class _DownloadManagerState extends State<DownloadManager> {
       return;
     }
 
-    if (pfdConfig != null) {
-      final pfdOk = await _ensurePfdFeatureInstalled(
-        context,
-        index,
-        downloadBloc,
-        config: pfdConfig,
-      );
-      if (!pfdOk) {
+    final pfdOk = await _ensurePfdFeatureInstalled(
+      context,
+      index,
+      downloadBloc,
+      config: pfdConfig,
+    );
+    
+    if (!pfdOk) {
+      if (mounted) {
+        setState(() {
+          loadingIndexes.remove(index);
+        });
+      }
+      downloadBloc.clearProgress(index);
+      return;
+    }
+
+    if (!pfdConfig.requiresExtraction) {
+      if (!context.mounted) {
         if (mounted) {
           setState(() {
             loadingIndexes.remove(index);
@@ -453,42 +466,30 @@ class _DownloadManagerState extends State<DownloadManager> {
         return;
       }
 
-      if (!pfdConfig.requiresExtraction) {
-        if (!context.mounted) {
-          if (mounted) {
-            setState(() {
-              loadingIndexes.remove(index);
-            });
-          }
-          downloadBloc.clearProgress(index);
-          return;
-        }
+      final completed = await _finalizeModuleOnlyInstall(
+        context: context,
+        index: index,
+        downloadBloc: downloadBloc,
+        config: pfdConfig,
+        packageParentName: packageParentName,
+        extensionMetadata: extensionMetadata,
+        isExtension: isExtension,
+      );
 
-        final completed = await _finalizeModuleOnlyInstall(
-          context: context,
-          index: index,
-          downloadBloc: downloadBloc,
-          config: pfdConfig,
-          packageParentName: packageParentName,
-          extensionMetadata: extensionMetadata,
-          isExtension: isExtension,
-        );
-
-        if (!completed) {
-          downloadBloc.clearProgress(index);
-        }
-
-        if (mounted) {
-          setState(() {
-            loadingIndexes.remove(index);
-          });
-        }
-        return;
+      if (!completed) {
+        downloadBloc.clearProgress(index);
       }
+
+      if (mounted) {
+        setState(() {
+          loadingIndexes.remove(index);
+        });
+      }
+      return;
     }
 
-    final stagedArchiveName = pfdConfig?.assetArchiveName;
-    if (pfdConfig != null && (stagedArchiveName == null || stagedArchiveName.isEmpty)) {
+    final stagedArchiveName = pfdConfig.assetArchiveName;
+    if ((stagedArchiveName == null || stagedArchiveName.isEmpty)) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -507,15 +508,13 @@ class _DownloadManagerState extends State<DownloadManager> {
       return;
     }
 
-    final archivePath = pfdConfig != null
-      ? "$tempDir/$stagedArchiveName"
-      : "$targetDir/$archiveName";
+    final archivePath = "$tempDir/$stagedArchiveName";
 
     final extractDir = isExtension
       ? extensionDir
       : runtimesDir;
 
-    if (pfdConfig != null && context.mounted) {
+    if (context.mounted) {
       final staged = await _stagePackageArchiveFromPfd(
         context: context,
         config: pfdConfig,
@@ -709,6 +708,16 @@ class _DownloadManagerState extends State<DownloadManager> {
     }
 
     try {
+      if (kDebugMode) {
+        final data = await rootBundle.load('debug_bundles/$assetName');
+        await File(archivePath).parent.create(recursive: true);
+        await File(archivePath).writeAsBytes(
+          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+          flush: true,
+        );
+        return true;
+      }
+      
       await NativeChannel.copyModuleAssetToPath(
         moduleName: config.moduleName,
         assetName: assetName,
@@ -759,6 +768,10 @@ class _DownloadManagerState extends State<DownloadManager> {
     required _PfdRuntimeConfig config,
     }
   ) async {
+    if (kDebugMode) {
+      downloadBloc.updateProgress(index, config.weight);
+      return true;
+    }
     return _runPfdInstallSerial(() async {
       final alreadyInstalled = await NativeChannel.isModuleInstalled(config.moduleName);
       if (alreadyInstalled) {
