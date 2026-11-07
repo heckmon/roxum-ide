@@ -153,7 +153,6 @@ class _StartScreenState extends State<StartScreen> {
       {'src': '$sharedPath/libicudata.so', 'dst': '$libDir/libicudata.so.78'},
       {'src': '$sharedPath/libbash.so', 'dst': '$binDir/bash'},
       {'src': '$sharedPath/libbash.so', 'dst': '$binDir/sh'},
-      {'src': '$sharedPath/librstloader.so', 'dst': '$binDir/rustloader'},
       {'src': '$sharedPath/libgit-remote-https.so', 'dst': '$gitCore/git-remote-https'},
       {'src': '$sharedPath/libgit-remote-https.so', 'dst': '$gitCore/git-remote-http'},
       {'src': '$sharedPath/libccls.so', 'dst': '$binDir/ccls'},
@@ -274,11 +273,6 @@ class _StartScreenState extends State<StartScreen> {
       await _ensureSymlink(
         linkPath: '$binDir/rustc',
         targetPath: '$sharedPath/librustc.so',
-      );
-
-      await _ensureSymlink(
-        linkPath: '$binDir/rustloader',
-        targetPath: '$sharedPath/librstloader.so',
       );
 
       await _ensureSymlink(

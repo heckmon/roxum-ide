@@ -34,7 +34,7 @@ dependencies:
   llama_flutter_android: { git: https://github.com/heckmon/Llama-Flutter.git }
   markdown: ^7.3.1
   markdown_widget: ^2.3.2+8
-  meta: ^1.17.0
+  mime: ^2.1.0
   path: ^1.9.0
   percent_indicator: ^4.2.5
   re_highlight: ^0.0.3

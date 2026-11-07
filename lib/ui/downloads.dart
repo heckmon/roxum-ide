@@ -1040,11 +1040,6 @@ class _DownloadManagerState extends State<DownloadManager> {
     );
 
     await _ensureSymlink(
-      linkPath: '$binDir/rustloader',
-      targetPath: '$sharedPath/librstloader.so',
-    );
-
-    await _ensureSymlink(
       linkPath: '$binDir/cargo',
       targetPath: '$sharedPath/libcargo.so',
     );

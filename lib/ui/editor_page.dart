@@ -21,6 +21,8 @@ import '../utils/functions.dart';
 import '../utils/themes.dart';
 import 'widgets.dart';
 
+const String _linker64 = '/system/bin/linker64';
+
 class DiagnosticsTickBloc extends Cubit<int> {
   DiagnosticsTickBloc() : super(0);
 
@@ -360,10 +362,6 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
     return lspLanguageIdForFile(language: language, filePath: filePath);
   }
 
-  bool _isPreviewEditor(ActiveEditor editor) {
-    return isPreviewFilePath(editor.file.path);
-  }
-
   Widget _buildTabIconForEditor(ActiveEditor editor, AppTheme appTheme) {
     if (isImageFilePath(editor.file.path) || isSvgFilePath(editor.file.path)) {
       return Icon(
@@ -592,20 +590,21 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
   }
 
   Widget _buildPreviewPane(ActiveEditor editor, AppTheme appTheme) {
-    return Container(
-      color: Colors.white,
-      child: (){
-        if (isImageFilePath(editor.file.path)) {
-          return _buildImagePreviewPane(editor, appTheme);
-        }
+    return (){
+      if (isImageFilePath(editor.file.path)) {
+        return _buildImagePreviewPane(editor, appTheme);
+      }
+    
+      if (isSvgFilePath(editor.file.path)) {
+        return _SvgPreviewPane(file: editor.file, appTheme: appTheme);
+      }
 
-        if (isSvgFilePath(editor.file.path)) {
-          return _SvgPreviewPane(file: editor.file, appTheme: appTheme);
-        }
-
-        return UniversalFileViewer(file: editor.file);
-      }(),
-    );
+      //TODO: Replace with custom implemnentation
+      return UniversalFileViewer(
+        file: editor.file,
+        backgroundColor: Colors.white,
+      );
+    }();
   }
 
   @override
@@ -863,7 +862,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
   }
 
   bool _isTrackableEditor(ActiveEditor editor) {
-    if (_isPreviewEditor(editor)) {
+    if (isPreviewFilePath(editor.file.path)) {
       return false;
     }
     if (editor.customTitle?.contains('(Working Tree)') == true) {
@@ -1414,7 +1413,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
       );
     }
 
-    if (_isPreviewEditor(activeEditor)) {
+    if (isPreviewFilePath(activeEditor.file.path)) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -2952,9 +2951,7 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                     }
                                 
                                     if (isPreviewFilePath(filePath.path) && context.mounted) {
-                                      final message = isDocFilePath(filePath.path)
-                                        ? 'Documents files can be previewed but are not executable.'
-                                        : 'Image/SVG files can be previewed but are not executable.';
+                                      const message = 'Documents files can be previewed but are not executable.';
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(content: Text(message)),
                                       );
@@ -2981,16 +2978,19 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                         }
                                         break;
                                       case '.c':
-                                        final String compileCommand = "clang -fPIC -shared ${filePath.path} -o ${temp.path}/libtemp.so";
-                                        final String runCommand = 'clangloader ${temp.path}/libtemp.so';
-                                        runCode(context, "$compileCommand && $runCommand", widget.rootDir);
-                                        break;
                                       case '.cpp':
                                       case '.c++':
                                       case '.cc':
-                                        final String compileCommand = "clang++ -fPIC -shared ${filePath.path} -o ${temp.path}/libtemp.so";
-                                        final String runCommand = 'clangloader ${temp.path}/libtemp.so';
-                                        runCode(context, "$compileCommand && $runCommand", widget.rootDir);
+                                        final bool isC = extension == '.c';
+                                        final String exePath = path.join(tempDir, isC ? '.roxum-c-run' : '.roxum-cpp-run');
+                                        final String compiler = isC ? 'clang' : 'clang++';
+                                        runCode(
+                                          context,
+                                          "trap 'rm -f \"$exePath\"' EXIT; "
+                                          "$compiler -fPIE -pie \"${filePath.path}\" -o \"$exePath\" "
+                                          "&& $_linker64 \"$exePath\"",
+                                          widget.rootDir,
+                                        );
                                         break;
                                       case '.java':
                                         final String compileCommand = "javac ${filePath.path} -d ${temp.path}";
@@ -3009,221 +3009,93 @@ class _EditorPageState extends State<EditorPage> with TickerProviderStateMixin, 
                                         runCode(context, "$compileCommand && $runCommand", widget.rootDir);
                                         break;
                                       case '.zig':
-                                        final soPath = path.join(tempDir, '.roxum-zig-run.so');
-                                        final command =
+                                        final String zigExe = path.join(tempDir, '.roxum-zig-run');
+                                        final String zigCommand =
 '''
 set -e
 
-wrapper="$tempDir/.roxum_zig_wrapper.zig"
-user_file="$tempDir/tempCode.zig"
 link_dir="$runtimesDir/clang/sysroot/.roxum_zig_android_libs"
 
 cleanup() {
-    rm -f "\$wrapper" "\$user_file" "$soPath"
+    rm -f "$zigExe"
     rm -rf "\$link_dir"
 }
 
 trap cleanup EXIT
-
-cp "${filePath.path}" "\$user_file"
-
-cat > "\$wrapper" <<'EOF'
-const user = @import("tempCode.zig");
-
-export fn __entry() void {
-    user.main();
-}
-EOF
-
-cd "$tempDir"
 
 mkdir -p "\$link_dir"
 ln -sf /system/lib64/libc.so "\$link_dir/liblibc.so"
 ln -sf /system/lib64/libm.so "\$link_dir/liblibm.so"
 ln -sf /system/lib64/libdl.so "\$link_dir/liblibdl.so"
 
-zig build-lib "\$wrapper" \\
-    -dynamic \\
-    -fPIC \\
+cd "$tempDir"
+
+zig build-exe "${filePath.path}" \\
+    -fPIE \\
     -target aarch64-linux-android \\
     --sysroot "$runtimesDir/clang/sysroot" \\
     -L/.roxum_zig_android_libs \\
     -llibc \\
     -llibm \\
     -llibdl \\
-    -femit-bin="$soPath"
+    -femit-bin="$zigExe"
 
-rustloader "$soPath"
+$_linker64 "$zigExe"
 ''';
-
-                                        runCode(context, command, widget.rootDir);
+                                        runCode(context, zigCommand, widget.rootDir);
                                         break;
                                       case '.go':
-                                        try {
-                                          final soPath = path.join(tempDir, '.roxum-go-run.so');
-                                
-                                          final command =
-                                              'export GOROOT="$runtimesDir/go" '
-                                              '&& export PATH="\$GOROOT/bin:\$PATH" '
-                                              '&& export CC="clang" '
-                                              '&& export GOOS="android" '
-                                              '&& export GOARCH="arm64" '
-                                              '&& echo "Compiling..." '
-                                              '&& go_bak="\$(mktemp)" '
-                                              '&& cp "${filePath.path}" "\$go_bak" '
-                                              '&& cleanup(){ '
-                                              'cp "\$go_bak" "${filePath.path}"; '
-                                                'rm -f "\$go_bak" "$soPath" "${filePath.path}.roxum.tmp"; '
-                                              '}; '
-                                              'trap cleanup EXIT '
-                                
-                                              '&& if ! grep -q \'import "C"\' "${filePath.path}"; then '
-                                                  'tmp_go="${filePath.path}.roxum.tmp"; '
-                                                  'if grep -q "^import (" "${filePath.path}"; then '
-                                                    "awk 'BEGIN{done=0} {print} !done && /^import \\(\$/ {print \"    \\\"C\\\"\"; done=1}' \"${filePath.path}\" > \"\$tmp_go\" && mv \"\$tmp_go\" \"${filePath.path}\"; "
-                                                  'elif grep -q "^import " "${filePath.path}"; then '
-                                                    "awk 'BEGIN{done=0} !done && /^import / {print \"import \\\"C\\\"\"; done=1} {print}' \"${filePath.path}\" > \"\$tmp_go\" && mv \"\$tmp_go\" \"${filePath.path}\"; "
-                                                  'else '
-                                                    "awk 'BEGIN{done=0} !done && /^package / {print; print \"\"; print \"import \\\"C\\\"\"; done=1; next} {print}' \"${filePath.path}\" > \"\$tmp_go\" && mv \"\$tmp_go\" \"${filePath.path}\"; "
-                                                  'fi; '
-                                              'fi '
-                                
-                                              '&& if ! grep -q "__entry" "${filePath.path}"; then '
-                                                  "printf '\\n//export __entry\\nfunc __entry() {\\n    main()\\n}\\n' >> \"${filePath.path}\"; "
-                                              'fi '
-                                
-                                                '&& rm -f "$soPath" '
-                                              '&& GOOS=android GOARCH=arm64 CGO_ENABLED=1 '
-                                              'go build -buildmode=c-shared -o "$soPath" "${filePath.path}" '
-                                              '&& rustloader "$soPath"';
-                                
-                                          runCode(context, command, widget.rootDir);
-                                
-                                        } catch (e) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text("Go run failed: ${e.toString()}")),
-                                          );
-                                        }
+                                        final String goExe = path.join(tempDir, '.roxum-go-run');
+                                        final String goCommand =
+'''
+set -e
+export GOROOT="$runtimesDir/go"
+export PATH="\$GOROOT/bin:\$PATH"
+export CC=clang
+export GOOS=android
+export GOARCH=arm64
+export CGO_ENABLED=1
+trap 'rm -f "$goExe"' EXIT
+echo "Compiling..."
+go build -o "$goExe" "${filePath.path}"
+$_linker64 "$goExe"
+''';
+                                        runCode(context, goCommand, widget.rootDir);
                                         break;
                                       case '.rs':
-                                        try {
-                                          final cargoFile = File("${widget.rootDir}/Cargo.toml");
-                                          String command = "";
-                                
-                                          if (cargoFile.existsSync()) {
-                                            final mainRs = File("${widget.rootDir}/src/main.rs");
-                                            final libRs = File("${widget.rootDir}/src/lib.rs");
-                                
-                                            final hasLibTarget = libRs.existsSync();
-                                
-                                            if (!hasLibTarget && !mainRs.existsSync()) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text("No src/main.rs or src/lib.rs found in this Cargo project."),
-                                                ),
-                                              );
-                                              return;
-                                            }
-                                
-                                            final targetPath = hasLibTarget ? libRs.path : mainRs.path;
-                                
-                                            command =
-'''
-set -e
-cargo_bak="\$(mktemp)"
-target_bak="\$(mktemp)"
-cargo_cfg_bak="\$(mktemp)"
-generated_lib=""
-cp "${cargoFile.path}" "\$cargo_bak"
-cp "$targetPath" "\$target_bak"
-if [ -f .cargo/config.toml ]; then cp .cargo/config.toml "\$cargo_cfg_bak"; else : > "\$cargo_cfg_bak"; fi
-cleanup(){
-cp "\$target_bak" "$targetPath";
-cp "\$cargo_bak" "${cargoFile.path}";
-if [ -s "\$cargo_cfg_bak" ]; then
-  mkdir -p .cargo;
-  cp "\$cargo_cfg_bak" .cargo/config.toml;
-else
-  rm -f .cargo/config.toml;
-  rmdir .cargo 2>/dev/null || true;
-fi;
-if [ -n "\$generated_lib" ]; then
-  rm -f "\$generated_lib";
-fi;
-rm -f "\$target_bak" "\$cargo_bak" "\$cargo_cfg_bak";
-};
-trap cleanup EXIT
-mkdir -p .cargo
-printf '[target.aarch64-linux-android]\nlinker = "clang"\n' > .cargo/config.toml
-if [ ${hasLibTarget ? 1 : 0} -eq 1 ]; then
-if ! grep -q "fn __entry" "$targetPath"; then
-  if grep -Eq 'fn[[:space:]]+main' "$targetPath"; then
-    printf '\n#[unsafe(no_mangle)]\npub extern "C" fn __entry() {\n    let _ = std::panic::catch_unwind(|| {\n        let _ = main();\n    });\n}\n' >> "$targetPath";
-  else
-    echo "Error: src/lib.rs needs either __entry() or main() for Roxum run.";
-    exit 1;
-  fi
-fi
-else
-if ! grep -Eq 'fn[[:space:]]+main' "$targetPath"; then
-  echo "Error: main() not found in src/main.rs.";
-  exit 1;
-fi
-generated_lib="${widget.rootDir}/src/.roxum_entry_lib.rs"
-cat > "\$generated_lib" <<'EOF'
-include!("main.rs");
+                                        final cargoFile = File("${widget.rootDir}/Cargo.toml");
+                                        String rustCommand;
 
-#[unsafe(no_mangle)]
-pub extern "C" fn __entry() {
-  let _ = std::panic::catch_unwind(|| {
-      let _ = main();
-  });
-}
-EOF
-if ! grep -Eq '^[[:space:]]*[lib][[:space:]]*\$' "${cargoFile.path}"; then
-  printf '\n[lib]\npath = "src/.roxum_entry_lib.rs"\ncrate-type = ["cdylib"]\n' >> "${cargoFile.path}";
-fi
-fi
-cargo rustc --release --lib -- --crate-type=cdylib
-so_file="\$(find target -type f -name 'lib*.so' | head -n 1)"
-[ -n "\$so_file" ]
-cp "\$so_file" "$tempDir/librustapp.so"
-rustloader "$tempDir/librustapp.so"
+                                        if (cargoFile.existsSync()) {
+                                          final hasMain = File("${widget.rootDir}/src/main.rs").existsSync();
+                                          final hasBinDir = Directory("${widget.rootDir}/src/bin").existsSync();
+                                          if (!hasMain && !hasBinDir) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text("No src/main.rs or src/bin found in this Cargo project."),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                          
+                                          rustCommand =
+'''
+export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=clang
+export CARGO_TARGET_AARCH64_LINUX_ANDROID_RUNNER=$_linker64
+cargo run --release
 ''';
-                                
-                                          } else {
-                                            final soPath = path.join(tempDir, '.roxum-rust-run.so');
-                                
-                                            command =
+                                        } else {
+                                          final String rustExe = path.join(tempDir, '.roxum-rust-run');
+                                          rustCommand =
 '''
 set -e
-rust_bak="\$(mktemp)"
-cp "${filePath.path}" "\$rust_bak"
-cleanup(){
-cp "\$rust_bak" "${filePath.path}";
-rm -f "\$rust_bak" "$soPath";
-};
-trap cleanup EXIT
-if ! grep -Eq 'fn[[:space:]]+main' "${filePath.path}"; then
-echo "Error: main() not found. This runner requires a main function.";
-exit 1;
-fi
-if ! grep -q "fn __entry" "${filePath.path}"; then
-printf '\n#[unsafe(no_mangle)]\npub extern "C" fn __entry() {\n    let _ = std::panic::catch_unwind(|| {\n        let _ = main();\n    });\n}\n' >> "${filePath.path}";
-fi
-rustc --crate-type=cdylib "${filePath.path}" -o "$soPath" -C linker=clang --sysroot "$runtimesDir/rust"
-rustloader "$soPath"
+trap 'rm -f "$rustExe"' EXIT
+rustc "${filePath.path}" -o "$rustExe" -C linker=clang --sysroot "$runtimesDir/rust"
+$_linker64 "$rustExe"
 ''';
-                                          }
-                                
-                                          runCode(context, command, widget.rootDir);
-                                
-                                        } catch (e) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text("Rust run failed: ${e.toString()}")),
-                                          );
                                         }
-                                
+
+                                        runCode(context, rustCommand, widget.rootDir);
                                         break;
                                       case '.md':
                                         Navigator.of(context).push(
@@ -3564,7 +3436,7 @@ rustloader "$soPath"
                   ? TabBarView(
                       controller: tabController,
                       children: editorState.activeEditors.map((editor) {
-                        if (_isPreviewEditor(editor)) {
+                        if (isPreviewFilePath(editor.file.path)) {
                           return _buildPreviewPane(editor, appTheme);
                         }
                         return EditorArea(

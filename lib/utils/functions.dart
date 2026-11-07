@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_archive/flutter_archive.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:mime/mime.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:roxum/utils/themes.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,16 +52,6 @@ bool isImageFilePath(String filePath) {
   );
 }
 
-bool isDocFilePath(String filePath) {
-  return !(isImageFilePath(filePath) ||
-  isSvgFilePath(filePath) ||
-  languages.any(
-    (lang) => lang.extension.contains(
-      path.extension(filePath).toLowerCase().substring(1)
-    )
-  ));
-}
-
 bool isSvgFilePath(String filePath) {
   return supportedSvgExtensions.contains(
     path.extension(filePath).toLowerCase(),
@@ -68,10 +59,8 @@ bool isSvgFilePath(String filePath) {
 }
 
 bool isPreviewFilePath(String filePath) {
-  return
-    isImageFilePath(filePath) ||
-    isSvgFilePath(filePath) ||
-    isDocFilePath(filePath);
+  final mime = lookupMimeType(filePath);
+  return mime != null && !mime.startsWith("text/");
 }
 
 const String _legacyProjectDir = '/data/data/com.roxum/Roxum/Projects';

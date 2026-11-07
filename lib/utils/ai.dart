@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:meta/meta.dart';
 import 'package:http/http.dart' as http;
 
 enum ToolCallingMethod {
@@ -708,7 +707,6 @@ sealed class Models {
     );
   }
 
-  @protected
   String _cleanCode(String raw) {
     final codeBlockRegex = RegExp(r'```(?:\w+)?\n([\s\S]*?)\n```');
     final thinkRegex = RegExp(r'<think>[\s\S]*?<\/think>');
@@ -724,7 +722,6 @@ sealed class OpenAiCompatible extends Models {
   @override
   ToolCallingMethod get toolCallingMethod => ToolCallingMethod.openAiCompatible;
 
-  @protected
   String get baseUrl;
   @override
   String get url => "$baseUrl/chat/completions";

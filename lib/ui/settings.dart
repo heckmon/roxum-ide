@@ -5787,7 +5787,7 @@ int main() {
                               ),
                               settingsTile(
                                 () async{
-                                  if(aiState.config.isEmpty){
+                                  if(aiState.config.isEmpty && !copilotState.isSignedIn){
                                     final prefs = await SharedPreferences.getInstance();
                                     if(context.mounted){
                                       prefs.setString('modelSelected', jsonEncode({}));
@@ -5819,15 +5819,14 @@ int main() {
                                           height: 300,
                                           width: 250,
                                           child: Builder(builder: (ctx) {
-                                            final copilotSignedIn = context.read<CopilotBloc>().state.status == CopilotStatus.signedIn;
                                             final initialSelected = (aiState.modelSelected['code'] != null && (aiState.modelSelected['code'] as String).isNotEmpty)
                                                 ? aiState.modelSelected['code'] as String
-                                                : (copilotSignedIn ? 'copilot' : '');
+                                                : (copilotState.isSignedIn ? 'copilot' : '');
 
                                             return RadioGroup<String>(
                                               groupValue: initialSelected,
                                               onChanged: (val) async {
-                                                final currentState = aiState.modelSelected;
+                                                final currentState = Map<String, dynamic>.from(aiState.modelSelected);
                                                 currentState['code'] = val!;
                                                 final prefs = await SharedPreferences.getInstance();
                                                 prefs.setString('modelSelected', jsonEncode(currentState));
@@ -5842,7 +5841,7 @@ int main() {
                                               },
                                               child: ListView(
                                                 children: [
-                                                  if (copilotSignedIn)
+                                                  if (copilotState.isSignedIn)
                                                     RadioListTile<String>(
                                                       value: 'copilot',
                                                       title: Text('Copilot'),
@@ -5850,10 +5849,10 @@ int main() {
                                                       activeColor: appThemeState.appTheme.isDark ? const Color(0xffb0c6fe) : const Color(0xff181a26),
                                                     ),
                                                   ...aiState.config.entries.map((entry) => RadioListTile<String>(
-                                                        value: entry.key,
-                                                        title: Text(entry.key),
-                                                        activeColor: appThemeState.appTheme.isDark ? const Color(0xffb0c6fe) : const Color(0xff181a26),
-                                                      )),
+                                                      value: entry.key,
+                                                      title: Text(entry.key),
+                                                      activeColor: appThemeState.appTheme.isDark ? const Color(0xffb0c6fe) : const Color(0xff181a26),
+                                                    )),
                                                 ],
                                               ),
                                             );
