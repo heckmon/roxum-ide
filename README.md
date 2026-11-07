@@ -15,6 +15,40 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
   <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="60">
 </a>
 
+> [!NOTE]
+> The current version has several issues and is quite bulky for non-playstore users.
+>
+> The upcoming v3.0.0 release aims to address these issues. However, some planned changes may conflict with Google Play policies. Consequently, future versions of Roxum may move from the Play Store to F-Droid and GitHub Releases.
+
+---
+
+<details>
+<summary><h2>What's coming in v3.0.0?</h2></summary>
+
+### rx – The Roxum Package Manager
+
+- Install a wide range of Linux tools instead of being restricted to predefined compilers.
+- This approach may conflict with [Google Play policies](https://support.google.com/googleplay/android-developer/answer/16559646).
+
+### GitHub-Flavored Markdown
+
+- Roxum's built-in Markdown engine has been migrated to GitHub-Flavored Markdown (GFM).
+
+### Custom Extension Support
+
+- Build custom extensions, similar to VS Code.
+- Install extensions developed by other users through the in-app extension store.
+- Lua will be the extension scripting language, similar to Neovim.
+
+### Bug Fixes
+
+- GitHub Copilot responses not appearing in chat after logging in.
+- TOML files failing to open.
+- Large C/C++ files failing to print output to stdout.
+</details>
+
+---
+
 ## Feature list:
 - **Completely free and open source.**
 - **Built-in Termux support for using Termux as a backend.**
@@ -22,7 +56,7 @@ It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runt
 - **Offline compilers and extensions for popular languages.**
 - **245 built-in themes and, an option for creating custom themes.**
 - **Built-in terminal.**
-- **Rust based editor backend using rope and sum tree data structures, similar to the zed editor.**
+- **A powerful editor backend using rope and sum tree data structures, similar to the zed editor.**
 - **AI Code Completion.**
 - **LSP support (suggesions, completions, error highlighting, hover info, etc).**
 - **Git and Github intergration.**
