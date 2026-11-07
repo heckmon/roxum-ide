@@ -11,9 +11,10 @@
 >
 > The upcoming v3.0.0 release aims to address these issues. However, some planned changes may conflict with Google Play policies. Consequently, future versions of Roxum may move from the Play Store to F-Droid and GitHub Releases.
 
-## What's coming in v3.0.0?
+<details>
+<summary><h2>What's coming in v3.0.0?</h2></summary>
 
-### RX – The Roxum Package Manager
+### rx – The Roxum Package Manager
 
 - Install a wide range of Linux tools instead of being restricted to predefined compilers.
 - This approach may conflict with [Google Play policies](https://support.google.com/googleplay/android-developer/answer/16559646).
@@ -33,6 +34,7 @@
 - GitHub Copilot responses not appearing in chat after logging in.
 - TOML files failing to open.
 - Large C/C++ files failing to print output to stdout.
+</details>
 
 Roxum IDE is a mobile-first code editor and mini IDE for Android, built with Flutter.
 It combines editing, terminal workflows, Git/GitHub tooling, AI assistance, runtime downloads, and deep customization in one app.
