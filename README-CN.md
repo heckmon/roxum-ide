@@ -132,7 +132,7 @@ flutter run
 ### 使用 gradlew
 
 ```bash
-cd android && ./gradlew :app:bundleRelease
+cd android && ./gradlew -Ptarget-platform=android-arm64 :app:bundleRelease
 ```
 
 生成的文件位于：

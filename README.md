@@ -123,7 +123,7 @@ flutter run
 ### With gradlew
 
 ```bash
-cd android && ./gradlew :app:bundleRelease
+cd android && ./gradlew -Ptarget-platform=android-arm64 :app:bundleRelease
 ```
 This will generate the output file in `build/app/outputs/bundle/release/app-release.aab`
 
