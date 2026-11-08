@@ -1,4 +1,5 @@
 What's new in Roxum v2.10.0
 
-- Swipe to clear recent files/folders from the home screen.
-- More file support.
+- Enhanced code execution
+- Roxum's built-in Markdown engine has been migrated to GitHub-Flavored Markdown (GFM).
+- Fixed file opening bugs.

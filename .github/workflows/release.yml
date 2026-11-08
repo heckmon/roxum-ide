@@ -183,8 +183,9 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: Roxum v${{ github.ref_name }}
           body: |
-            - Swipe to clear recent files/folders from the home screen.
-            - More file support.
+              - Enhanced code execution
+              - Roxum's built-in Markdown engine has been migrated to GitHub-Flavored Markdown (GFM).
+              - Fixed file opening bugs.
           generate_release_notes: false
           draft: false
           files: |
