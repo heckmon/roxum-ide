@@ -4,12 +4,16 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.annotation.NonNull
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.documentfile.provider.DocumentFile
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -37,7 +41,10 @@ class MainActivity : FlutterActivity() {
     private val SAF_CHANNEL = "roxum/saf"
     private val PFD_CHANNEL = "roxum/pfd"
     private val PFD_EVENTS_CHANNEL = "roxum/pfd_events"
+    private val SYSTEM_UI_CHANNEL = "roxum/system_ui"
     private val PICK_DIR_REQUEST = 9001
+
+    private var immersiveNavigationEnabled = false
 
     private var pendingSafResult: MethodChannel.Result? = null
     private var pfdEventSink: EventChannel.EventSink? = null
@@ -68,6 +75,43 @@ class MainActivity : FlutterActivity() {
         handleIncomingIntent(intent)
     }
 
+    override fun onPostResume() {
+        super.onPostResume()
+        applyImmersiveNavigation()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            applyImmersiveNavigation()
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyImmersiveNavigation()
+    }
+
+    /**
+     * Keeps the status bar visible, preserves the edge-to-edge layout and
+     * upgrades the navigation bar to transient (sticky) immersive mode.
+     * WindowInsetsControllerCompat maps this to the platform controller on
+     * Android 11+ and to the equivalent legacy flags on older versions.
+     */
+    private fun applyImmersiveNavigation() {
+        if (!immersiveNavigationEnabled) return
+
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        controller.show(WindowInsetsCompat.Type.statusBars())
+        // Transient behavior reveals the bars only for an intentional swipe
+        // from the screen edge; ordinary content scrolls and taps stay in the
+        // app and must not bring the navigation bar back.
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller.hide(WindowInsetsCompat.Type.navigationBars())
+    }
+
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
@@ -88,6 +132,20 @@ class MainActivity : FlutterActivity() {
                 }
                 else ->
                     result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            SYSTEM_UI_CHANNEL
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "enableImmersiveNavigation" -> {
+                    immersiveNavigationEnabled = true
+                    applyImmersiveNavigation()
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
         }
 

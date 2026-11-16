@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -55,35 +56,36 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> {
-  Timer? _navBarHideTimer;
-  
+  static const MethodChannel _systemUiChannel =
+      MethodChannel('roxum/system_ui');
+
   @override
   void initState() {
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.manual,
-      overlays: [SystemUiOverlay.top],
-    );
-
-    SystemChrome.setSystemUIChangeCallback((systemOverlaysAreVisible) async {
-      if (systemOverlaysAreVisible) {
-        _navBarHideTimer?.cancel();
-        _navBarHideTimer = Timer(const Duration(seconds: 3), () {
-          SystemChrome.setEnabledSystemUIMode(
-            SystemUiMode.manual,
-            overlays: [SystemUiOverlay.top],
-          );
-        });
-      }
-    });
-    
     super.initState();
+    unawaited(_configureSystemUi());
   }
 
-  @override
-  void dispose() {
-    _navBarHideTimer?.cancel();
-    SystemChrome.setSystemUIChangeCallback(null);
-    super.dispose();
+  Future<void> _configureSystemUi() async {
+    try {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        // Issue #49: keep the navigation bar hidden so it does not cover
+        // bottom UI, while keeping the status bar visible. Flutter's manual
+        // mode cannot express that combination with transient swipe behavior,
+        // so the native side owns the bars and the edge-to-edge layout.
+        await _systemUiChannel.invokeMethod<void>(
+          'enableImmersiveNavigation',
+        );
+        return;
+      }
+
+      // Keep the status bar visible and preserve the current layout.
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: [SystemUiOverlay.top],
+      );
+    } catch (error, stackTrace) {
+      debugPrint('Failed to configure system UI: $error\n$stackTrace');
+    }
   }
 
   @override
