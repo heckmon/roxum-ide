@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -4697,7 +4698,26 @@ $diffText
                   child: BlocBuilder<RepoStatusBloc, RepoStatusState>(
                     builder: (context, state) {
                       if (state is RepoStatusLoaded && state.commits != null) {
+                        final graphError = state.graphError?.replaceFirst(
+                          'GitGraphException: ',
+                          '',
+                        );
                         if (state.commits!.isEmpty) {
+                          if (graphError != null) {
+                            return Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Text(
+                                  'Could not load commit history.\n$graphError',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.redAccent,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
                           return Center(
                             child: Text(
                               'No commits found',
@@ -4708,17 +4728,11 @@ $diffText
                             ),
                           );
                         }
-                        final commits = state.commits!;
-                        return Scrollbar(
-                          controller: _commitGraphScrollController,
-                          thumbVisibility: commits.length > 10,
-                          child: SingleChildScrollView(
-                            controller: _commitGraphScrollController,
-                            child: GitCommitGraph(
-                              commits: commits,
-                              appTheme: widget.appTheme,
-                            ),
-                          ),
+                        return CommitGraphView(
+                          commits: state.commits!,
+                          graphError: graphError,
+                          appTheme: widget.appTheme,
+                          scrollController: _commitGraphScrollController,
                         );
                       } else if (state is RepoStatusLoading) {
                         return const Center(child: CircularProgressIndicator());
@@ -12612,158 +12626,103 @@ Color _getGraphColor(int index) {
   return _gitGraphColors[index % _gitGraphColors.length];
 }
 
-class VSCodeGitGraphPainter extends CustomPainter {
+const double _graphLineWidth = 1.8;
+const double _graphNodeStrokeWidth = 1.6;
+const double _graphNodeRadius = 4;
+const double _graphMergeRingRadius = 5.5;
+const double _graphReferenceCapRadius = 6;
+const double _graphReferenceRingRadius = 5.5;
+const double _graphReferenceCenterRadius = 3.5;
+const double _graphBranchOffset = 6;
+const double _graphIncomingStop = 4;
+const double _graphLaneShiftHeight = 7;
+
+/// Pass-through lanes change column at the bottom of the row, below the commit
+/// node. This is the single rule that keeps every lane shift away from nodes.
+Path _passThroughPath(double fromX, double toX, double rowHeight) {
+  final shiftStart = rowHeight - _graphLaneShiftHeight;
+  return Path()
+    ..moveTo(fromX, 0)
+    ..lineTo(fromX, shiftStart)
+    ..cubicTo(
+      fromX,
+      shiftStart + _graphLaneShiftHeight * 0.5,
+      toX,
+      shiftStart + _graphLaneShiftHeight * 0.5,
+      toX,
+      rowHeight,
+    );
+}
+
+class GitGraphPainter extends CustomPainter {
   final CommitRowInfo rowInfo;
   final double laneWidth;
   final double rowHeight;
-  final bool isDark;
   final Color textColor;
   final Color secondaryTextColor;
   final Color backgroundColor;
   final double maxWidth;
 
-  VSCodeGitGraphPainter({
+  /// Width reserved for this row's lanes; its text starts right after them.
+  final double graphWidth;
+
+  GitGraphPainter({
     required this.rowInfo,
     required this.textColor,
     required this.secondaryTextColor,
     required this.backgroundColor,
     required this.maxWidth,
-    this.laneWidth = 16,
+    required this.graphWidth,
+    this.laneWidth = 12,
     this.rowHeight = 36,
-    this.isDark = true,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final linePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
+      ..strokeWidth = _graphLineWidth
       ..strokeCap = StrokeCap.round;
-
-    final nodePaint = Paint()..style = PaintingStyle.fill;
-    final nodeStrokePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    final nodeCapPaint = Paint()..style = PaintingStyle.fill;
 
     final commitX = rowInfo.commitLane * laneWidth + laneWidth / 2;
     final commitY = rowHeight / 2;
 
-    for (final line in rowInfo.lines) {
-      final fromX = line.fromLane * laneWidth + laneWidth / 2;
-      final toX = line.toLane * laneWidth + laneWidth / 2;
-      final color = _getGraphColor(line.colorIndex);
-      linePaint.color = color;
+    // Keep the graph inside its capped lane columns; the text starts after it.
+    canvas.save();
+    canvas.clipRect(Rect.fromLTWH(0, 0, graphWidth, rowHeight));
 
-      if (line.isPassThrough) {
-        canvas.drawLine(Offset(fromX, 0), Offset(fromX, rowHeight), linePaint);
-      } else if (line.fromLane == line.toLane) {
-        canvas.drawLine(
-          Offset(fromX, commitY + 5),
-          Offset(fromX, rowHeight),
-          linePaint,
-        );
-      } else {
-        final path = Path();
-
-        if (line.toLane > line.fromLane) {
-          path.moveTo(fromX, commitY + 5);
-          path.cubicTo(
-            fromX,
-            commitY + 10,
-            fromX + 14,
-            rowHeight - 12,
-            toX,
-            rowHeight,
-          );
-        } else {
-          path.moveTo(fromX, commitY + 5);
-          path.cubicTo(
-            fromX,
-            commitY + 12,
-            toX + 15,
-            rowHeight,
-            toX,
-            rowHeight,
-          );
-        }
-        canvas.drawPath(path, linePaint);
-      }
-    }
-
-    final nodeColor = _getGraphColor(rowInfo.colorIndex);
-    final isReferenceCommit = rowInfo.commit.isHead || rowInfo.commit.isRemoteHead;
-
-    if (!isReferenceCommit) {
-      linePaint.color = nodeColor;
+    // Draw the incoming lane first so a converging branch carries its colour
+    // into the node without a T-shaped colour change on the lane.
+    if (rowInfo.hasIncoming) {
+      linePaint.color = _getGraphColor(rowInfo.colorIndex);
       canvas.drawLine(
         Offset(commitX, 0),
-        Offset(commitX, commitY - 5),
+        Offset(commitX, commitY - _graphIncomingStop),
         linePaint,
       );
     }
 
-    if (isReferenceCommit) {
-      nodeCapPaint.color = backgroundColor;
-      canvas.drawCircle(Offset(commitX, commitY), 8, nodeCapPaint);
-      nodeStrokePaint.color = nodeColor.withAlpha(220);
-      canvas.drawCircle(Offset(commitX, commitY), 7, nodeStrokePaint);
-      nodePaint.color = nodeColor;
-      canvas.drawCircle(Offset(commitX, commitY), 4, nodePaint);
-    } else if (rowInfo.commit.isMerge) {
-      nodePaint.color = nodeColor;
-      canvas.drawCircle(Offset(commitX, commitY), 5, nodePaint);
-      nodeStrokePaint.color = nodeColor.withAlpha(180);
-      canvas.drawCircle(Offset(commitX, commitY), 7, nodeStrokePaint);
-    } else {
-      nodePaint.color = nodeColor;
-      canvas.drawCircle(Offset(commitX, commitY), 5, nodePaint);
-    }
-
-    int maxLaneInRow = rowInfo.commitLane;
     for (final line in rowInfo.lines) {
-      if (line.fromLane > maxLaneInRow) maxLaneInRow = line.fromLane;
-      if (line.toLane > maxLaneInRow) maxLaneInRow = line.toLane;
+      _drawLine(canvas, linePaint, line, commitX, commitY);
     }
 
-    final graphWidth = (maxLaneInRow + 1) * laneWidth + 12;
-    double textStartX = graphWidth;
-    final availableWidth = maxWidth - textStartX;
+    _drawNode(canvas, commitX, commitY);
+    canvas.restore();
+
+    final double textStartX = graphWidth;
+    final double availableWidth = maxWidth - textStartX;
 
     if (availableWidth > 50) {
+      var messageStartX = textStartX;
+      var messageWidth = availableWidth;
       if (rowInfo.commit.isMerge) {
-        final badgePainter = TextPainter(
-          text: TextSpan(
-            text: 'Merge',
-            style: TextStyle(
-              color: _getGraphColor(rowInfo.colorIndex),
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
+        final badgeAdvance = _drawMergeBadge(
+          canvas,
+          textStartX,
+          _getGraphColor(rowInfo.colorIndex),
         );
-        badgePainter.layout();
-
-        final badgeWidth = badgePainter.width + 8;
-        final badgeHeight = badgePainter.height + 2;
-        final badgeRect = RRect.fromRectAndRadius(
-          Rect.fromLTWH(textStartX, 8, badgeWidth, badgeHeight),
-          const Radius.circular(3),
-        );
-
-        final badgeBgPaint = Paint()
-          ..color = _getGraphColor(rowInfo.colorIndex).withAlpha(40)
-          ..style = PaintingStyle.fill;
-        canvas.drawRRect(badgeRect, badgeBgPaint);
-
-        final badgeBorderPaint = Paint()
-          ..color = _getGraphColor(rowInfo.colorIndex).withAlpha(100)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1;
-        canvas.drawRRect(badgeRect, badgeBorderPaint);
-        badgePainter.paint(canvas, Offset(textStartX + 4, 8));
-        textStartX += badgeWidth + 6;
+        messageStartX += badgeAdvance;
+        messageWidth = max(0.0, messageWidth - badgeAdvance);
       }
 
       final messagePainter = TextPainter(
@@ -12775,16 +12734,18 @@ class VSCodeGitGraphPainter extends CustomPainter {
         maxLines: 1,
         ellipsis: '...',
       );
-      messagePainter.layout(
-        maxWidth: availableWidth - (rowInfo.commit.isMerge ? 50 : 0),
-      );
-      messagePainter.paint(canvas, Offset(textStartX, 6));
+      messagePainter.layout(maxWidth: messageWidth);
+      messagePainter.paint(canvas, Offset(messageStartX, 6));
+      messagePainter.dispose();
 
-      final authorHash =
-          '${rowInfo.commit.author} • ${rowInfo.commit.hash.substring(0, 7)}';
+      final shortHash = rowInfo.commit.hash.length > 7
+          ? rowInfo.commit.hash.substring(0, 7)
+          : rowInfo.commit.hash;
+      final hiddenLanes = rowInfo.laneCount - gitGraphMaxLanes;
+      final laneNote = hiddenLanes > 0 ? ' • +$hiddenLanes lanes' : '';
       final authorPainter = TextPainter(
         text: TextSpan(
-          text: authorHash,
+          text: '${rowInfo.commit.author} • $shortHash$laneNote',
           style: TextStyle(
             color: secondaryTextColor,
             fontSize: 10,
@@ -12796,19 +12757,163 @@ class VSCodeGitGraphPainter extends CustomPainter {
         ellipsis: '...',
       );
       authorPainter.layout(maxWidth: availableWidth);
-      authorPainter.paint(canvas, Offset(graphWidth, 22));
+      authorPainter.paint(canvas, Offset(textStartX, 22));
+      authorPainter.dispose();
+    }
+  }
+
+  /// Draws the merge badge and returns the horizontal space it occupies.
+  double _drawMergeBadge(Canvas canvas, double x, Color color) {
+    final badgePainter = TextPainter(
+      text: TextSpan(
+        text: 'Merge',
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final badgeWidth = badgePainter.width + 8;
+    final badgeHeight = badgePainter.height + 2;
+    final badgeRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(x, 8, badgeWidth, badgeHeight),
+      const Radius.circular(3),
+    );
+    canvas.drawRRect(
+      badgeRect,
+      Paint()
+        ..color = color.withAlpha(40)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawRRect(
+      badgeRect,
+      Paint()
+        ..color = color.withAlpha(100)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+    badgePainter.paint(canvas, Offset(x + 4, 8));
+    badgePainter.dispose();
+    return badgeWidth + 6;
+  }
+
+  void _drawLine(
+    Canvas canvas,
+    Paint paint,
+    GraphLine line,
+    double commitX,
+    double commitY,
+  ) {
+    final fromX = line.fromLane * laneWidth + laneWidth / 2;
+    final toX = line.toLane * laneWidth + laneWidth / 2;
+    paint.color = _getGraphColor(line.colorIndex);
+
+    if (line.fromLane == line.toLane) {
+      if (line.kind == GraphLineKind.passThrough) {
+        canvas.drawLine(Offset(fromX, 0), Offset(fromX, rowHeight), paint);
+      } else if (line.kind == GraphLineKind.outgoing) {
+        canvas.drawLine(
+          Offset(commitX, commitY),
+          Offset(toX, rowHeight),
+          paint,
+        );
+      }
+      // Incoming edges always converge from another lane.
+      return;
+    }
+
+    switch (line.kind) {
+      case GraphLineKind.passThrough:
+        canvas.drawPath(_passThroughPath(fromX, toX, rowHeight), paint);
+      case GraphLineKind.incoming:
+        // The edge leaves its own lane vertically, then approaches the node
+        // diagonally, so it never runs along the parent's lane.
+        final direction = commitX > fromX ? 1.0 : -1.0;
+        final offset = min(_graphBranchOffset, (commitX - fromX).abs() / 2);
+        final path = Path()
+          ..moveTo(fromX, 0)
+          ..cubicTo(
+            fromX,
+            _graphBranchOffset,
+            commitX - direction * offset,
+            commitY - _graphBranchOffset,
+            commitX,
+            commitY,
+          );
+        canvas.drawPath(path, paint);
+      case GraphLineKind.outgoing:
+        // The edge leaves the node diagonally and bends into the parent's
+        // lane, so the branch arm never runs on top of the current lane.
+        final direction = toX > fromX ? 1.0 : -1.0;
+        final offset = min(_graphBranchOffset, (toX - fromX).abs() / 2);
+        final path = Path()
+          ..moveTo(commitX, commitY)
+          ..cubicTo(
+            commitX + direction * offset,
+            commitY + _graphBranchOffset,
+            toX,
+            rowHeight - offset,
+            toX,
+            rowHeight,
+          );
+        canvas.drawPath(path, paint);
+    }
+  }
+
+  void _drawNode(Canvas canvas, double x, double y) {
+    final color = _getGraphColor(rowInfo.colorIndex);
+    final center = Offset(x, y);
+    final nodePaint = Paint()..style = PaintingStyle.fill;
+    final nodeStrokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _graphNodeStrokeWidth;
+    final nodeCapPaint = Paint()..style = PaintingStyle.fill;
+
+    if (rowInfo.commit.isHead || rowInfo.commit.isRemoteHead) {
+      nodeCapPaint.color = backgroundColor;
+      canvas.drawCircle(center, _graphReferenceCapRadius, nodeCapPaint);
+      nodeStrokePaint.color = color.withAlpha(220);
+      canvas.drawCircle(center, _graphReferenceRingRadius, nodeStrokePaint);
+      nodePaint.color = color;
+      canvas.drawCircle(center, _graphReferenceCenterRadius, nodePaint);
+    } else if (rowInfo.commit.isMerge) {
+      nodePaint.color = color;
+      canvas.drawCircle(center, _graphNodeRadius, nodePaint);
+      nodeStrokePaint.color = color.withAlpha(180);
+      canvas.drawCircle(center, _graphMergeRingRadius, nodeStrokePaint);
+    } else {
+      nodePaint.color = color;
+      canvas.drawCircle(center, _graphNodeRadius, nodePaint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant VSCodeGitGraphPainter oldDelegate) {
+  bool shouldRepaint(covariant GitGraphPainter oldDelegate) {
     return oldDelegate.rowInfo != rowInfo ||
         oldDelegate.maxWidth != maxWidth ||
-        oldDelegate.textColor != textColor;
+        oldDelegate.graphWidth != graphWidth ||
+        oldDelegate.textColor != textColor ||
+        oldDelegate.secondaryTextColor != secondaryTextColor ||
+        oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.laneWidth != laneWidth ||
+        oldDelegate.rowHeight != rowHeight;
   }
 }
 
-class GitCommitGraph extends StatelessWidget {
+/// Gap between a row's lane columns and its commit text.
+const double gitGraphTextGap = 4;
+
+/// Maximum number of lane columns rendered by the graph.
+const int gitGraphMaxLanes = 16;
+
+/// Scrolling commit history; the lane layout is cached per commit list.
+///
+/// Treat [commits] as immutable: the cache refreshes when a new list instance
+/// arrives, not when the same list is mutated in place.
+class GitCommitGraph extends StatefulWidget {
   final List<CommitNode> commits;
   final AppTheme appTheme;
 
@@ -12819,15 +12924,50 @@ class GitCommitGraph extends StatelessWidget {
   });
 
   @override
+  State<GitCommitGraph> createState() => _GitCommitGraphState();
+}
+
+class _GitCommitGraphState extends State<GitCommitGraph> {
+  late List<CommitRowInfo> _rowInfos;
+
+  @override
+  void initState() {
+    super.initState();
+    _rowInfos = assignGitGraphLanes(widget.commits);
+  }
+
+  @override
+  void didUpdateWidget(covariant GitCommitGraph oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.commits, widget.commits)) {
+      _rowInfos = assignGitGraphLanes(widget.commits);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final rowInfos = assignVSCodeLanes(commits);
-    const contentWidth = 500.0;
+    final rowInfos = _rowInfos;
+
+    const double laneWidth = 12;
+    const double rowHeight = 36;
+    int maxLaneCount = 1;
+    for (final rowInfo in rowInfos) {
+      if (rowInfo.laneCount > maxLaneCount) {
+        maxLaneCount = rowInfo.laneCount;
+      }
+    }
+
+    // Reserve enough width for the widest visible row plus room for its text.
+    final int visibleLaneCount = min(maxLaneCount, gitGraphMaxLanes);
+    final double maxGraphWidth =
+        visibleLaneCount * laneWidth + gitGraphTextGap;
+    final double contentWidth = max(500.0, maxGraphWidth + 260.0);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
         width: contentWidth,
-        height: commits.length * 36.0,
+        height: rowInfos.length * rowHeight,
         child: ListView.builder(
           padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
@@ -12835,23 +12975,80 @@ class GitCommitGraph extends StatelessWidget {
           itemCount: rowInfos.length,
           itemBuilder: (context, index) {
             final rowInfo = rowInfos[index];
+            // Each row only reserves the space of its own lanes. The text
+            // follows the graph closely instead of being pushed to the right
+            // by the widest row in the entire history.
+            final double rowGraphWidth =
+                min(rowInfo.laneCount, gitGraphMaxLanes) * laneWidth +
+                gitGraphTextGap;
             return SizedBox(
-              height: 36,
+              height: rowHeight,
               child: CustomPaint(
-                size: Size(contentWidth, 36),
-                painter: VSCodeGitGraphPainter(
+                size: Size(contentWidth, rowHeight),
+                painter: GitGraphPainter(
                   rowInfo: rowInfo,
-                  isDark: appTheme.isDark,
-                  textColor: appTheme.selectScreenCardTextColor,
-                  secondaryTextColor: appTheme.selectScreenCardTextColor.withAlpha(150),
-                  backgroundColor: appTheme.scaffoldBg,
+                  textColor: widget.appTheme.selectScreenCardTextColor,
+                  secondaryTextColor:
+                      widget.appTheme.selectScreenCardTextColor.withAlpha(150),
+                  backgroundColor: widget.appTheme.scaffoldBg,
                   maxWidth: contentWidth,
+                  graphWidth: rowGraphWidth,
+                  laneWidth: laneWidth,
+                  rowHeight: rowHeight,
                 ),
               ),
             );
           },
         ),
       ),
+    );
+  }
+}
+
+/// The loaded commit graph with an optional refresh-error banner.
+class CommitGraphView extends StatelessWidget {
+  final List<CommitNode> commits;
+  final String? graphError;
+  final AppTheme appTheme;
+  final ScrollController scrollController;
+
+  const CommitGraphView({
+    super.key,
+    required this.commits,
+    required this.graphError,
+    required this.appTheme,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final graph = Scrollbar(
+      controller: scrollController,
+      thumbVisibility: commits.length > 10,
+      child: SingleChildScrollView(
+        controller: scrollController,
+        child: GitCommitGraph(commits: commits, appTheme: appTheme),
+      ),
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (graphError != null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+            child: Text(
+              'Could not refresh commit history: $graphError',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 11),
+            ),
+          )
+        else
+          const SizedBox.shrink(),
+        Flexible(child: graph),
+      ],
     );
   }
 }
