@@ -19,6 +19,9 @@ class RepoStatusLoaded extends RepoStatusState {
   final List<String> unstaged;
   final String rawOutput;
   final List<CommitNode>? commits;
+
+  /// Last graph loading error, if any. The previous [commits] are kept.
+  final String? graphError;
   final String? currentBranch;
   final List<String> branches;
   final List<String> remoteBranches;
@@ -35,6 +38,7 @@ class RepoStatusLoaded extends RepoStatusState {
     required this.unstaged,
     required this.rawOutput,
     this.commits,
+    this.graphError,
     this.currentBranch,
     this.branches = const [],
     this.remoteBranches = const [],
@@ -52,6 +56,8 @@ class RepoStatusLoaded extends RepoStatusState {
     List<String>? unstaged,
     String? rawOutput,
     List<CommitNode>? commits,
+    String? graphError,
+    bool clearGraphError = false,
     String? currentBranch,
     List<String>? branches,
     List<String>? remoteBranches,
@@ -68,6 +74,7 @@ class RepoStatusLoaded extends RepoStatusState {
       unstaged: unstaged ?? this.unstaged,
       rawOutput: rawOutput ?? this.rawOutput,
       commits: commits ?? this.commits,
+      graphError: clearGraphError ? null : (graphError ?? this.graphError),
       currentBranch: currentBranch ?? this.currentBranch,
       branches: branches ?? this.branches,
       remoteBranches: remoteBranches ?? this.remoteBranches,
@@ -87,6 +94,7 @@ class RepoStatusLoaded extends RepoStatusState {
     unstaged,
     rawOutput,
     commits,
+    graphError,
     currentBranch,
     branches,
     remoteBranches,

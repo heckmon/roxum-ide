@@ -649,65 +649,143 @@ Future<ProcessResult> gitCommit(
   return result;
 }
 
+/// Returns the commits of the checked-out branch, newest first.
+///
+/// Returns an empty list when HEAD is unborn. Throws if `git log` fails for a
+/// repository with a valid HEAD, so callers do not silently show an empty
+/// history.
 Future<List<CommitNode>> getGraph(String workspacePath) async {
   final sharedPath = await NativeChannel.getLibraryPath();
-  final result = await Process.run(
-    "$binDir/git",
-    ["log", "--all", "--pretty=format:%H%x01%P%x01%an%x01%s"],
-    workingDirectory: workspacePath,
+  return readCommitGraph(
+    workspacePath: workspacePath,
+    gitExecutable: "$binDir/git",
     environment: gitEnvs(sharedPath),
   );
+}
 
-  String? headHash;
-  String? upstreamHash;
+/// Runs the graph queries and parses the result.
+///
+/// Exposed for tests so the command wiring can run against a real temporary
+/// repository without the app's native channel.
+@visibleForTesting
+Future<List<CommitNode>> readCommitGraph({
+  required String workspacePath,
+  required String gitExecutable,
+  Map<String, String>? environment,
+}) async {
+  final meta = await Future.wait([
+    Process.run(
+      gitExecutable,
+      ["rev-parse", "HEAD"],
+      workingDirectory: workspacePath,
+      environment: environment,
+      stdoutEncoding: const Utf8Codec(allowMalformed: true),
+      stderrEncoding: const Utf8Codec(allowMalformed: true),
+    ),
+    Process.run(
+      gitExecutable,
+      ["rev-parse", "--verify", "@{u}"],
+      workingDirectory: workspacePath,
+      environment: environment,
+      stdoutEncoding: const Utf8Codec(allowMalformed: true),
+      stderrEncoding: const Utf8Codec(allowMalformed: true),
+    ),
+    Process.run(
+      gitExecutable,
+      ["symbolic-ref", "--quiet", "HEAD"],
+      workingDirectory: workspacePath,
+      environment: environment,
+      stdoutEncoding: const Utf8Codec(allowMalformed: true),
+      stderrEncoding: const Utf8Codec(allowMalformed: true),
+    ),
+  ]);
 
-  final headResult = await Process.run(
-    "$binDir/git",
-    ["rev-parse", "HEAD"],
-    workingDirectory: workspacePath,
-    environment: gitEnvs(sharedPath),
-  );
-  if (headResult.exitCode == 0) {
-    headHash = (headResult.stdout as String).trim();
+  final [headResult, upstreamResult, refResult] = meta;
+  final headHash = headResult.exitCode == 0
+      ? (headResult.stdout as String).trim()
+      : null;
+  final upstreamHash = upstreamResult.exitCode == 0
+      ? (upstreamResult.stdout as String).trim()
+      : null;
+  final onBranch = refResult.exitCode == 0;
+
+  if (headHash == null || headHash.isEmpty) {
+    // An unborn branch has a symbolic HEAD but no commits yet.
+    if (onBranch) return const [];
+    throw GitGraphException(
+      'git HEAD lookup failed: ${headResult.stderr.toString().trim()}',
+    );
   }
 
-  final upstreamResult = await Process.run(
-    "$binDir/git",
-    ["rev-parse", "--verify", "@{u}"],
+  final logResult = await Process.run(
+    gitExecutable,
+    [
+      "log",
+      // The checked-out branch and its configured upstream. Other branches,
+      // tags and backup refs are deliberately excluded.
+      "HEAD",
+      if (upstreamHash != null &&
+          upstreamHash.isNotEmpty &&
+          upstreamHash != headHash)
+        upstreamHash,
+      // Children must always be listed before their parents, otherwise the
+      // lane algorithm cannot connect them (it draws top to bottom).
+      "--topo-order",
+      "--pretty=format:%H%x01%P%x01%an%x01%s",
+    ],
     workingDirectory: workspacePath,
-    environment: gitEnvs(sharedPath),
+    environment: environment,
+    stdoutEncoding: const Utf8Codec(allowMalformed: true),
+    stderrEncoding: const Utf8Codec(allowMalformed: true),
   );
-  if (upstreamResult.exitCode == 0) {
-    upstreamHash = (upstreamResult.stdout as String).trim();
+
+  if (logResult.exitCode != 0) {
+    throw GitGraphException(
+      'git log failed: ${logResult.stderr.toString().trim()}',
+    );
   }
 
-  final List<CommitNode> commits = [];
-  final lines = result.stdout.toString().split('\n');
+  return parseCommitGraph(
+    logResult.stdout.toString(),
+    headHash: headHash,
+    upstreamHash: upstreamHash,
+  );
+}
 
-  for (final line in lines) {
+/// Parses the 0x01-separated output produced by [getGraph].
+List<CommitNode> parseCommitGraph(
+  String output, {
+  String? headHash,
+  String? upstreamHash,
+}) {
+  final commits = <CommitNode>[];
+  for (final line in output.split('\n')) {
     if (line.trim().isEmpty) continue;
-
     final parts = line.split('\x01');
-    if (parts.length >= 4) {
-      final hash = parts[0];
-      final parentHashes = parts[1].isEmpty ? <String>[] : parts[1].split(' ');
-      final author = parts[2];
-      final message = parts[3];
-
-      commits.add(
-        CommitNode(
-          hash: hash,
-          parents: parentHashes,
-          author: author,
-          message: message,
-          isHead: hash == headHash,
-          isRemoteHead: upstreamHash != null && hash == upstreamHash,
-        ),
-      );
-    }
+    if (parts.length < 4) continue;
+    final hash = parts[0];
+    commits.add(
+      CommitNode(
+        hash: hash,
+        parents: parts[1].isEmpty ? const <String>[] : parts[1].split(' '),
+        author: parts[2],
+        message: parts[3],
+        isHead: hash == headHash,
+        isRemoteHead: upstreamHash != null && hash == upstreamHash,
+      ),
+    );
   }
+  return List.unmodifiable(commits);
+}
 
-  return commits;
+/// Raised when the graph cannot be read from a repository with a valid HEAD.
+class GitGraphException implements Exception {
+  final String message;
+
+  const GitGraphException(this.message);
+
+  @override
+  String toString() => 'GitGraphException: $message';
 }
 
 Future<void> gitRestoreFile(String fileName, String workspacePath) async {
@@ -2512,191 +2590,291 @@ class ChatSession {
   );
 }
 
+/// A commit from `git log`; immutable input to the graph layout.
+@immutable
 class CommitNode {
   final String hash;
   final List<String> parents;
   final String author;
   final String message;
-  int lane;
-  int? childLane;
-  bool isMerge;
-  bool isBranchStart;
-  bool isHead;
-  bool isRemoteHead;
+  final bool isHead;
+  final bool isRemoteHead;
+
+  bool get isMerge => parents.length > 1;
 
   CommitNode({
     required this.hash,
-    required this.parents,
+    required List<String> parents,
     required this.author,
     required this.message,
-    this.lane = -1,
-    this.childLane,
-    this.isMerge = false,
-    this.isBranchStart = false,
     this.isHead = false,
     this.isRemoteHead = false,
-  });
+  }) : parents = List.unmodifiable(parents);
 }
 
-class GraphLine {
-  final int fromLane;
-  final int toLane;
-  final int colorIndex;
-  final bool isPassThrough;
+/// What a [GraphLine] does on its row.
+enum GraphLineKind {
+  /// A lane that crosses the row from top to bottom.
+  passThrough,
 
-  GraphLine({
+  /// An edge that comes from the top border into this row's commit node.
+  incoming,
+
+  /// An edge that leaves this row's commit node towards the bottom border.
+  outgoing,
+}
+
+/// One painted connection on a commit's row.
+@immutable
+class GraphLine {
+  /// Lane at the top border for pass-through lines, or the commit's lane for
+  /// an edge that leaves the node towards a parent.
+  final int fromLane;
+
+  /// Lane at the bottom border for pass-through lines, or the commit's lane
+  /// for an incoming edge.
+  final int toLane;
+
+  final int colorIndex;
+  final GraphLineKind kind;
+
+  const GraphLine({
     required this.fromLane,
     required this.toLane,
     required this.colorIndex,
-    this.isPassThrough = false,
+    required this.kind,
   });
 }
 
+/// The computed layout of one commit row.
+@immutable
 class CommitRowInfo {
   final CommitNode commit;
   final List<GraphLine> lines;
   final int commitLane;
+
+  /// Colour of this commit's lane. The edge arriving from the row above uses
+  /// the same colour.
   final int colorIndex;
+
+  /// Whether an edge from the previous row reaches this commit's node.
+  final bool hasIncoming;
+
+  /// Number of lane columns used by this row (top and bottom positions).
+  final int laneCount;
 
   CommitRowInfo({
     required this.commit,
-    required this.lines,
+    required List<GraphLine> lines,
     required this.commitLane,
     required this.colorIndex,
-  });
+    required this.hasIncoming,
+    required this.laneCount,
+  }) : lines = List.unmodifiable(lines);
 }
 
-List<CommitRowInfo> assignVSCodeLanes(List<CommitNode> commits) {
-  if (commits.isEmpty) return [];
+class _GraphLane {
+  final String hash;
+  final int colorIndex;
 
-  final List<CommitRowInfo> rowInfos = [];
+  _GraphLane(this.hash, this.colorIndex);
+}
 
-  final Map<String, int> hashToIndex = {};
-  for (int i = 0; i < commits.length; i++) {
-    hashToIndex[commits[i].hash] = i;
+/// Assigns lanes to topo-ordered commits (newest first).
+///
+/// The first commit is the newest tip in the log (HEAD, or its upstream when
+/// that is ahead). Its first-parent chain stays on lane 0; side branches use
+/// the lanes to the right.
+List<CommitRowInfo> assignGitGraphLanes(List<CommitNode> commits) {
+  if (commits.isEmpty) return const [];
+  final knownHashes = commits.map((commit) => commit.hash).toSet();
+  return _LaneLayout(knownHashes).build(commits);
+}
+
+/// Builds the layout row by row. When a lane is no longer needed it is removed
+/// and the columns to its right slide left, keeping the graph compact.
+class _LaneLayout {
+  _LaneLayout(this._knownHashes);
+
+  final Set<String> _knownHashes;
+  final List<_GraphLane> _lanes = [];
+  final List<CommitRowInfo> _rows = [];
+  int _nextColorIndex = 0;
+
+  List<CommitRowInfo> build(List<CommitNode> commits) {
+    for (final commit in commits) {
+      _addCommit(commit);
+    }
+    return List.unmodifiable(_rows);
   }
 
-  final Map<int, (String, int)> activeLanes = {};
-  final Map<String, int> hashToLane = {};
-  final Map<String, int> hashToColor = {};
-  int nextColorIndex = 0;
+  void _addCommit(CommitNode commit) {
+    final List<_GraphLane> topLanes = List<_GraphLane>.of(_lanes);
+    final matchedLane = _findLane(commit.hash);
+    final List<GraphLine> incomingLines = [];
+    final int commitLane;
+    final int colorIndex;
 
-  int findAvailableLane(int preferredLane) {
-    if (!activeLanes.containsKey(preferredLane)) {
-      return preferredLane;
-    }
-    int lane = 0;
-    while (activeLanes.containsKey(lane)) {
-      lane++;
-    }
-    return lane;
-  }
-
-  for (int i = 0; i < commits.length; i++) {
-    final commit = commits[i];
-    commit.isMerge = commit.parents.length > 1;
-
-    final List<GraphLine> lines = [];
-    int commitLane;
-    int colorIndex;
-
-    int? expectedLane;
-    int? expectedColor;
-    for (final entry in activeLanes.entries) {
-      if (entry.value.$1 == commit.hash) {
-        expectedLane = entry.key;
-        expectedColor = entry.value.$2;
-        break;
-      }
-    }
-
-    if (expectedLane != null) {
-      commitLane = expectedLane;
-      colorIndex = expectedColor!;
-      activeLanes.remove(expectedLane);
+    if (matchedLane != null) {
+      colorIndex = _lanes[matchedLane].colorIndex;
+      commitLane = matchedLane;
+      _removeLanesFor(commit.hash, matchedLane, incomingLines);
     } else {
-      commitLane = findAvailableLane(0);
-      colorIndex = nextColorIndex++;
-      commit.isBranchStart = i > 0;
+      // A branch tip that is not connected to anything shown above it.
+      commitLane = _lanes.length;
+      colorIndex = _nextColorIndex++;
     }
 
-    commit.lane = commitLane;
-    hashToLane[commit.hash] = commitLane;
-    hashToColor[commit.hash] = colorIndex;
+    // Columns released by the extra lanes converging into this node. Extra
+    // merge parents reuse them, so right-hand lanes do not slide across the
+    // new merge edge.
+    final freedColumns = <int>[
+      for (var i = 0; i < topLanes.length; i++)
+        if (i != commitLane && topLanes[i].hash == commit.hash) i,
+    ];
+    final parentLanes = _placeParentLanes(
+      commit.parents,
+      freedColumns: freedColumns,
+      commitLane: commitLane,
+      baseColor: colorIndex,
+    );
+    final lines = <GraphLine>[
+      ..._passThroughLines(topLanes, commit.hash),
+      ...incomingLines,
+      ..._parentLines(commitLane, parentLanes),
+    ];
 
-    for (final entry in activeLanes.entries) {
-      lines.add(
-        GraphLine(
-          fromLane: entry.key,
-          toLane: entry.key,
-          colorIndex: entry.value.$2,
-          isPassThrough: true,
-        ),
-      );
-    }
-
-    for (int p = 0; p < commit.parents.length; p++) {
-      final parentHash = commit.parents[p];
-      int? existingParentLane;
-      int? existingParentColor;
-      for (final entry in activeLanes.entries) {
-        if (entry.value.$1 == parentHash) {
-          existingParentLane = entry.key;
-          existingParentColor = entry.value.$2;
-          break;
-        }
-      }
-
-      int parentLane;
-      int parentColor;
-
-      if (existingParentLane != null) {
-        parentLane = existingParentLane;
-        parentColor = existingParentColor!;
-        final hasDiagonal = parentLane != commitLane;
-        final edgeColor = hasDiagonal
-            ? (commit.isMerge && p > 0 ? parentColor : colorIndex)
-            : parentColor;
-        lines.add(
-          GraphLine(
-            fromLane: commitLane,
-            toLane: parentLane,
-            colorIndex: edgeColor,
-          ),
-        );
-      } else {
-        if (p == 0) {
-          parentLane = commitLane;
-          parentColor = colorIndex;
-        } else {
-          parentLane = findAvailableLane(commitLane + 1);
-          parentColor = nextColorIndex++;
-        }
-
-        activeLanes[parentLane] = (parentHash, parentColor);
-        hashToColor[parentHash] = parentColor;
-
-        lines.add(
-          GraphLine(
-            fromLane: commitLane,
-            toLane: parentLane,
-            colorIndex: parentColor,
-          ),
-        );
-      }
-    }
-
-    rowInfos.add(
+    _rows.add(
       CommitRowInfo(
         commit: commit,
         lines: lines,
         commitLane: commitLane,
         colorIndex: colorIndex,
+        hasIncoming: matchedLane != null,
+        laneCount: _laneCount(commitLane, lines),
       ),
     );
   }
 
-  return rowInfos;
+  /// The first (leftmost) lane waiting for [hash], or null.
+  int? _findLane(String hash) {
+    final index = _lanes.indexWhere((lane) => lane.hash == hash);
+    return index < 0 ? null : index;
+  }
+
+  /// Also records an incoming edge for every extra lane merging into
+  /// [matchedLane].
+  void _removeLanesFor(
+    String hash,
+    int matchedLane,
+    List<GraphLine> incomingLines,
+  ) {
+    for (var i = _lanes.length - 1; i >= 0; i--) {
+      final lane = _lanes[i];
+      if (lane.hash != hash) continue;
+      if (i != matchedLane) {
+        incomingLines.add(
+          GraphLine(
+            fromLane: i,
+            toLane: matchedLane,
+            colorIndex: lane.colorIndex,
+            kind: GraphLineKind.incoming,
+          ),
+        );
+      }
+      _lanes.removeAt(i);
+    }
+  }
+
+  /// First parents stay in the commit column; extra parents take a column
+  /// released on this row, or else start at the right edge. The leftmost lane
+  /// waiting for a parent is the one its node uses; the other lanes converge
+  /// there.
+  List<_GraphLane> _placeParentLanes(
+    List<String> parents, {
+    required List<int> freedColumns,
+    required int commitLane,
+    required int baseColor,
+  }) {
+    final parentLanes = <_GraphLane>[];
+    final seenParents = <String>{};
+    var ordinal = 0;
+
+    for (final parentHash in parents) {
+      // A shallow clone (or a filtered log) can reference commits that are
+      // not part of the list; never create a lane that can never be resolved.
+      if (!_knownHashes.contains(parentHash)) continue;
+      if (!seenParents.add(parentHash)) continue;
+
+      final isFirst = ordinal == 0;
+      final int insertAt;
+      if (isFirst) {
+        insertAt = commitLane < _lanes.length ? commitLane : _lanes.length;
+      } else {
+        insertAt = freedColumns.isEmpty
+            ? _lanes.length
+            : min(freedColumns.removeAt(0), _lanes.length);
+      }
+      final lane = _GraphLane(
+        parentHash,
+        isFirst ? baseColor : _nextColorIndex++,
+      );
+      _lanes.insert(insertAt, lane);
+      parentLanes.add(lane);
+      ordinal++;
+    }
+    return parentLanes;
+  }
+
+  /// Lanes that cross the row, shifting column when compaction moved them.
+  List<GraphLine> _passThroughLines(
+    List<_GraphLane> topLanes,
+    String commitHash,
+  ) {
+    final lines = <GraphLine>[];
+    for (var topIndex = 0; topIndex < topLanes.length; topIndex++) {
+      final lane = topLanes[topIndex];
+      if (lane.hash == commitHash) continue;
+      final bottomIndex = _lanes.indexOf(lane);
+      if (bottomIndex < 0) continue;
+      lines.add(
+        GraphLine(
+          fromLane: topIndex,
+          toLane: bottomIndex,
+          colorIndex: lane.colorIndex,
+          kind: GraphLineKind.passThrough,
+        ),
+      );
+    }
+    return lines;
+  }
+
+  /// Edges that leave the node towards each parent, in the parent lane colour.
+  List<GraphLine> _parentLines(int commitLane, List<_GraphLane> parentLanes) {
+    final lines = <GraphLine>[];
+    for (final lane in parentLanes) {
+      final bottomIndex = _lanes.indexOf(lane);
+      if (bottomIndex < 0) continue;
+      lines.add(
+        GraphLine(
+          fromLane: commitLane,
+          toLane: bottomIndex,
+          colorIndex: lane.colorIndex,
+          kind: GraphLineKind.outgoing,
+        ),
+      );
+    }
+    return lines;
+  }
+
+  int _laneCount(int commitLane, List<GraphLine> lines) {
+    var laneCount = commitLane + 1;
+    for (final line in lines) {
+      if (line.fromLane + 1 > laneCount) laneCount = line.fromLane + 1;
+      if (line.toLane + 1 > laneCount) laneCount = line.toLane + 1;
+    }
+    return laneCount;
+  }
 }
 
 Map<String, (String, Color)> gitFileStatus = {

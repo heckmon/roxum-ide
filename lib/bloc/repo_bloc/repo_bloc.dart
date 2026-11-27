@@ -51,8 +51,16 @@ class GithubAuthState extends Equatable {
   List<Object?> get props => [isSignedIn, user];
 }
 
+typedef CommitGraphLoader = Future<List<CommitNode>> Function(
+  String workspace,
+);
+
 class RepoStatusBloc extends Bloc<RepoStatusEvent, RepoStatusState> {
-  RepoStatusBloc() : super(const RepoStatusInitial()) {
+  final CommitGraphLoader _loadGraph;
+
+  RepoStatusBloc({CommitGraphLoader? loadGraph})
+    : _loadGraph = loadGraph ?? getGraph,
+      super(const RepoStatusInitial()) {
     on<LoadRepoStatus>(_onLoad);
     on<RefreshGitFileStatus>(_onRefreshGitFileStatus);
     on<LoadCommitGraph>(_onLoadCommitGraph);
@@ -141,10 +149,13 @@ class RepoStatusBloc extends Bloc<RepoStatusEvent, RepoStatusState> {
           : 0;
 
       List<CommitNode>? commits;
+      String? graphError;
       try {
-        commits = await getGraph(event.workspace);
-      } catch (_) {
-        commits = existingCommits ?? [];
+        commits = await _loadGraph(event.workspace);
+      } catch (e) {
+        graphError = e.toString();
+        // Keep the last valid history when a refresh fails.
+        commits = existingCommits ?? const <CommitNode>[];
       }
 
       emit(
@@ -153,6 +164,7 @@ class RepoStatusBloc extends Bloc<RepoStatusEvent, RepoStatusState> {
           unstaged: unstaged,
           rawOutput: stdout,
           commits: commits,
+          graphError: graphError,
           currentBranch: currentBranch,
           branches: branches,
           remoteBranches: remoteBranches,
@@ -175,10 +187,10 @@ class RepoStatusBloc extends Bloc<RepoStatusEvent, RepoStatusState> {
     Emitter<RepoStatusState> emit,
   ) async {
     try {
-      final commits = await getGraph(event.workspace);
+      final commits = await _loadGraph(event.workspace);
       if (state is RepoStatusLoaded) {
         final currentState = state as RepoStatusLoaded;
-        emit(currentState.copyWith(commits: commits));
+        emit(currentState.copyWith(commits: commits, clearGraphError: true));
       } else {
         emit(
           RepoStatusLoaded(
@@ -192,7 +204,7 @@ class RepoStatusBloc extends Bloc<RepoStatusEvent, RepoStatusState> {
     } catch (e) {
       if (state is RepoStatusLoaded) {
         final currentState = state as RepoStatusLoaded;
-        emit(currentState.copyWith(commits: []));
+        emit(currentState.copyWith(graphError: e.toString()));
       } else {
         emit(RepoStatusError(message: e.toString()));
       }
